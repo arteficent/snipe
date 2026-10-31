@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = ["crates/snipe-core", "crates/snipe-collectors", "crates/snipe-engine", "crates/snipe-cli", "app/src-tauri"]
+
+[workspace.package]
+# Single source of truth for the application version (managed by scripts/version.mjs).
+version = "0.1.0"
+edition = "2024"
+authors = ["Sourabh Singh", "Snipe contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/arteficent/snipe"
+homepage = "https://github.com/arteficent/snipe"
+rust-version = "1.88"
+
+[workspace.dependencies]
+snipe-core = { path = "crates/snipe-core" }
+snipe-collectors = { path = "crates/snipe-collectors" }
+snipe-engine = { path = "crates/snipe-engine" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+winreg = "0.56"
+windows = "0.62"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

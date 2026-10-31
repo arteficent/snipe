@@ -1,0 +1,98 @@
+name: Pull request
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.affected.outputs.rust }}
+      packages: ${{ steps.affected.outputs.packages }}
+      app: ${{ steps.affected.outputs.app }}
+      frontend: ${{ steps.affected.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: affected
+        run: node .github/scripts/affected.mjs "origin/${{ github.base_ref }}"
+
+  rust:
+    name: Rust (${{ needs.changes.outputs.packages }})
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Build frontend (embedded by the app crate)
+        if: needs.changes.outputs.app == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - if: needs.changes.outputs.app == 'true'
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+      - name: Clippy
+        run: cargo clippy --locked ${{ needs.changes.outputs.packages }} --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --locked ${{ needs.changes.outputs.packages }}
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+  # Single status to mark as required in branch protection.
+  ci-ok:
+    name: CI result
+    needs: [changes, rust, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          for result in "${{ needs.changes.result }}" "${{ needs.rust.result }}" "${{ needs.frontend.result }}"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "A required job did not succeed ($result)"
+              exit 1
+            fi
+          done
+          echo "All affected jobs passed or were skipped."

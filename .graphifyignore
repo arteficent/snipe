@@ -1,0 +1,10 @@
+target/
+node_modules/
+app/dist/
+app/src-tauri/gen/
+graphify-out/
+app/src-tauri/icons/
+*.png
+*.svg
+*.ico
+*.icns

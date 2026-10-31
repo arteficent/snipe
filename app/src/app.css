@@ -1,0 +1,84 @@
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f7f7f9;
+  --bg-hover: #ececf1;
+  --fg: #1d1d21;
+  --fg-muted: #6b6b76;
+  --border: #dcdce3;
+  --border-subtle: #eeeef2;
+  --accent: #2563eb;
+  --accent-bg: #dbe6fd;
+  --danger: #c62828;
+  --badge-removable: #e3f2e6;
+  --badge-shared: #fff1cc;
+  --badge-system: #dde8fb;
+  --badge-locked: #fbdcdc;
+  color-scheme: light dark;
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1b1f;
+    --bg-elevated: #232328;
+    --bg-hover: #2e2e35;
+    --fg: #e8e8ec;
+    --fg-muted: #9a9aa6;
+    --border: #36363e;
+    --border-subtle: #2a2a30;
+    --accent: #6ea0ff;
+    --accent-bg: #23345a;
+    --danger: #ff7b7b;
+    --badge-removable: #213a28;
+    --badge-shared: #4a3c14;
+    --badge-system: #1f3256;
+    --badge-locked: #4f2020;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+input[type="search"] {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  outline: none;
+}
+
+input[type="search"]:focus {
+  border-color: var(--accent);
+}
