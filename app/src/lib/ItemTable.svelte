@@ -32,7 +32,7 @@
   let scrollTop = $state(0);
   let viewportHeight = $state(0);
 
-  const start = $derived(Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN));
+  const start = $derived(Math.max(0, Math.floor((scrollTop - ROW_HEIGHT) / ROW_HEIGHT) - OVERSCAN));
   const end = $derived(Math.min(rows.length, Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + OVERSCAN));
   const visible = $derived(rows.slice(start, end));
 
@@ -43,23 +43,15 @@
     const current = rows.findIndex((r) => r.id === selectedId);
     const next = Math.min(rows.length - 1, Math.max(0, current + (e.key === "ArrowDown" ? 1 : -1)));
     onselect(rows[next].id);
-    const top = next * ROW_HEIGHT;
-    if (top < viewport.scrollTop) viewport.scrollTop = top;
+    // Rows start below the sticky header, which is one row tall.
+    const top = (next + 1) * ROW_HEIGHT;
+    if (top - ROW_HEIGHT < viewport.scrollTop) viewport.scrollTop = top - ROW_HEIGHT;
     else if (top + ROW_HEIGHT > viewport.scrollTop + viewportHeight)
       viewport.scrollTop = top + ROW_HEIGHT - viewportHeight;
   }
 </script>
 
 <div class="table">
-  <div class="row header">
-    {#each columns as col}
-      <button class="cell" class:right={col.align === "right"} onclick={() => onsort(col.key)}>
-        {col.label}
-        {#if sortKey === col.key}<span class="arrow">{sortAsc ? "▲" : "▼"}</span>{/if}
-      </button>
-    {/each}
-  </div>
-
   <div
     class="viewport"
     role="listbox"
@@ -70,6 +62,14 @@
     onscroll={() => (scrollTop = viewport.scrollTop)}
     {onkeydown}
   >
+    <div class="row header">
+      {#each columns as col}
+        <button class="cell" class:right={col.align === "right"} onclick={() => onsort(col.key)}>
+          {col.label}
+          {#if sortKey === col.key}<span class="arrow">{sortAsc ? "▲" : "▼"}</span>{/if}
+        </button>
+      {/each}
+    </div>
     <div class="spacer" style:height="{rows.length * ROW_HEIGHT}px">
       <div class="window" style:transform="translateY({start * ROW_HEIGHT}px)">
         {#each visible as item}
@@ -114,11 +114,13 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
     flex: 1;
   }
   .row {
     display: grid;
-    grid-template-columns: minmax(220px, 3fr) minmax(90px, 1fr) minmax(130px, 2fr) 90px 76px minmax(110px, 1.2fr) 86px 96px 104px 60px;
+    grid-template-columns: minmax(200px, 3fr) minmax(80px, 1fr) minmax(120px, 2fr) 90px 76px minmax(100px, 1.2fr) 86px 96px 104px 60px;
+    min-width: 1030px;
     align-items: center;
     height: 32px;
     padding: 0 8px;
@@ -126,6 +128,9 @@
     cursor: default;
   }
   .header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     background: var(--bg-elevated);
     border-bottom: 1px solid var(--border);
     font-weight: 600;
@@ -162,7 +167,7 @@
   }
   .viewport {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     position: relative;
     outline: none;
   }
@@ -171,7 +176,8 @@
   }
   .window {
     position: absolute;
-    inset: 0 0 auto 0;
+    inset: 0 auto auto 0;
+    min-width: 100%;
     will-change: transform;
   }
   .window .row:hover {

@@ -4,8 +4,24 @@
 
 Built with Rust and [Tauri 2](https://tauri.app) (WebView2) and a Svelte 5 UI. The installer is a few MB, and a full scan takes a few seconds.
 
+**Website:** [arteficent.github.io/snipe](https://arteficent.github.io/snipe/) · **Download:** [latest release](https://github.com/arteficent/snipe/releases/latest)
+
+![Snipe main window: categories, filters, the inventory table and the details pane](docs/images/overview.png)
+
 > [!WARNING]
 > Snipe deletes software, files and registry data with administrator rights. Every removal is previewed, backed up and can be undone from **History**. Even so, review what you select, and test on a virtual machine before relying on it.
+
+## Screenshots
+
+| Untrusted & suspicious software | Uninstall plan |
+|---|---|
+| ![Untrusted and suspicious view with risk reasons](docs/images/threats.png) | ![Uninstall plan dialog](docs/images/uninstall-plan.png) |
+| **Leftover review** | **Remove threat** |
+| ![Leftover review with confidence scores](docs/images/uninstall-leftovers.png) | ![Remove threat review list](docs/images/threat-review.png) |
+| **History & undo** | **Dark mode** |
+| ![History dialog with Undo](docs/images/history.png) | ![Snipe in dark mode](docs/images/dark.png) |
+
+The screenshots use fictional demo data. To regenerate them, see [Updating screenshots](#updating-screenshots).
 
 ## Features
 
@@ -111,6 +127,20 @@ cargo clippy --workspace --all-targets -- -D warnings
 cd app; npm run check; npm run build
 ```
 
+### Updating screenshots
+
+Screenshots are taken in a normal browser with fictional demo data, so they never show a real machine.
+[`scripts/screenshots/mock-ipc.js`](scripts/screenshots/mock-ipc.js) stands in for the Tauri backend.
+
+1. Copy the mock into Vite's public folder: `mkdir app/public; cp scripts/screenshots/mock-ipc.js app/public/__mock-ipc.js`.
+2. Start the dev server: `cd app; npm run dev`.
+3. Open <http://localhost:5173> in a browser automation tool (for example Playwright). Before the page loads, inject the mock with an init script that loads `/__mock-ipc.js` synchronously.
+4. Save screenshots to `docs/images/`, then delete `app/public/`.
+
+### Website
+
+The product page is a single static file, [`docs/index.html`](docs/index.html), which uses the images in `docs/images/`. To publish it, open the repository **Settings → Pages** and set **Source** to *Deploy from a branch*, then choose `main` and the `/docs` folder. The site appears at <https://arteficent.github.io/snipe/>.
+
 ## Project layout
 
 ```
@@ -122,7 +152,8 @@ crates/
 app/                 Svelte 5 frontend (Vite)
 app/src-tauri/       Tauri shell and commands
 scripts/version.mjs  Versioning helper
-docs/                Architecture and plan
+scripts/screenshots/ Demo-data mock used for screenshots
+docs/                Website (index.html), screenshots, architecture and plan
 graphify-out/        Knowledge graph of the codebase (see GRAPH_REPORT.md)
 ```
 
