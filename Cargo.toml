@@ -4,7 +4,7 @@ members = ["crates/snipe-core", "crates/snipe-collectors", "crates/snipe-engine"
 
 [workspace.package]
 # Single source of truth for the application version (managed by scripts/version.mjs).
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Sourabh Singh", "Snipe contributors"]
 license = "MIT OR Apache-2.0"

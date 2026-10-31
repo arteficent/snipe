@@ -2783,7 +2783,7 @@ checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
 
 [[package]]
 name = "snipe"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -2796,7 +2796,7 @@ dependencies = [
 
 [[package]]
 name = "snipe-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde_json",
  "snipe-core",
@@ -2805,7 +2805,7 @@ dependencies = [
 
 [[package]]
 name = "snipe-collectors"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde_json",
  "snipe-core",
@@ -2815,14 +2815,14 @@ dependencies = [
 
 [[package]]
 name = "snipe-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "snipe-engine"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
