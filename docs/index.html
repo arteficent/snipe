@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snipe: Windows inventory and deep uninstaller</title>
+    <meta
+      name="description"
+      content="Snipe lists everything installed on Windows, flags untrusted software, and uninstalls completely, including the leftovers, with backups and one-click undo. Free and open source."
+    />
+    <meta property="og:title" content="Snipe: uninstall anything, leave nothing behind" />
+    <meta property="og:description" content="Free, open-source inventory and deep uninstaller for Windows." />
+    <meta property="og:image" content="images/overview.png" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%232563eb'/%3E%3Ccircle cx='256' cy='256' r='150' fill='none' stroke='%23fff' stroke-width='36'/%3E%3Ccircle cx='256' cy='256' r='34' fill='%23fff'/%3E%3Cpath d='M256 60v110M256 342v110M60 256h110M342 256h110' stroke='%23fff' stroke-width='36' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --bg-soft: #f5f7fb;
+        --card: #ffffff;
+        --fg: #111827;
+        --muted: #5b6475;
+        --border: #e3e7ef;
+        --accent: #2563eb;
+        --accent-soft: #e6eeff;
+        --danger: #c62828;
+        --ok: #2e7d32;
+        --warn: #b26a00;
+        --shadow: 0 18px 50px rgba(17, 24, 39, 0.12);
+        --radius: 14px;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1115;
+          --bg-soft: #161920;
+          --card: #1b1f27;
+          --fg: #e8eaf0;
+          --muted: #a0a7b5;
+          --border: #2a2f3a;
+          --accent: #6ea0ff;
+          --accent-soft: #1d2a47;
+          --danger: #ff7b7b;
+          --ok: #6fcf7a;
+          --warn: #f0b35a;
+          --shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+        line-height: 1.6;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+      code,
+      pre {
+        font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+      }
+      .wrap {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* Navigation */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(10px);
+        background: color-mix(in srgb, var(--bg) 85%, transparent);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav .wrap {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        height: 64px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 20px;
+        color: var(--fg);
+        text-decoration: none;
+      }
+      .logo svg {
+        width: 30px;
+        height: 30px;
+      }
+      .nav-links {
+        display: flex;
+        gap: 20px;
+        margin-left: auto;
+        font-size: 15px;
+      }
+      .nav-links a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        color: var(--fg);
+      }
+      @media (max-width: 860px) {
+        .nav-links {
+          display: none;
+        }
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid var(--border);
+        color: var(--fg);
+        background: var(--card);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .btn.primary {
+          color: #0b1020;
+        }
+      }
+      .btn.small {
+        padding: 8px 14px;
+        font-size: 14px;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 72px 0 40px;
+        text-align: center;
+        background: radial-gradient(1100px 420px at 50% -80px, var(--accent-soft), transparent 70%);
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      h1 {
+        font-size: clamp(36px, 6vw, 60px);
+        line-height: 1.08;
+        margin: 18px 0 14px;
+        letter-spacing: -0.02em;
+      }
+      .lead {
+        font-size: clamp(18px, 2.2vw, 21px);
+        color: var(--muted);
+        max-width: 760px;
+        margin: 0 auto 28px;
+      }
+      .cta {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .fineprint {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .frame {
+        margin: 44px auto 0;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        background: var(--card);
+      }
+      .frame .bar {
+        display: flex;
+        gap: 7px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-soft);
+      }
+      .frame .bar span {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .zoomable {
+        cursor: zoom-in;
+      }
+
+      /* Sections */
+      section {
+        padding: 72px 0;
+      }
+      section.soft {
+        background: var(--bg-soft);
+      }
+      h2 {
+        font-size: clamp(28px, 4vw, 38px);
+        line-height: 1.15;
+        margin: 0 0 12px;
+        letter-spacing: -0.01em;
+      }
+      .section-lead {
+        color: var(--muted);
+        max-width: 720px;
+        margin: 0 0 36px;
+      }
+      .center {
+        text-align: center;
+      }
+      .center .section-lead {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* Stats */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        padding: 28px 0 8px;
+      }
+      .stat {
+        text-align: center;
+      }
+      .stat b {
+        display: block;
+        font-size: 28px;
+        color: var(--accent);
+      }
+      .stat span {
+        color: var(--muted);
+        font-size: 15px;
+      }
+      @media (max-width: 720px) {
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* Feature cards */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      @media (max-width: 960px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 620px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+      }
+      .card h3 {
+        margin: 12px 0 6px;
+        font-size: 19px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .icon svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      /* Screenshot tour */
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-bottom: 22px;
+      }
+      .tab {
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg);
+        padding: 9px 16px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .tab[aria-selected="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .tab[aria-selected="true"] {
+          color: #0b1020;
+        }
+      }
+      .tour-caption {
+        text-align: center;
+        color: var(--muted);
+        max-width: 780px;
+        margin: 18px auto 0;
+      }
+      .tour img {
+        margin: 0 auto;
+      }
+      .tour .frame {
+        margin-top: 0;
+      }
+      .tour .frame.dialog {
+        max-width: 900px;
+      }
+
+      /* Steps */
+      .steps {
+        display: grid;
+        gap: 56px;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: 1fr 1.35fr;
+        gap: 40px;
+        align-items: center;
+      }
+      .step:nth-child(even) .step-text {
+        order: 2;
+      }
+      @media (max-width: 860px) {
+        .step {
+          grid-template-columns: 1fr;
+        }
+        .step:nth-child(even) .step-text {
+          order: 0;
+        }
+      }
+      .step-num {
+        display: inline-grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+      @media (prefers-color-scheme: dark) {
+        .step-num {
+          color: #0b1020;
+        }
+      }
+      .step h3 {
+        font-size: 24px;
+        margin: 12px 0 8px;
+      }
+      .step p {
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .step ul {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+      .step .frame {
+        margin: 0;
+      }
+
+      /* Risk levels */
+      .levels {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 26px 0 0;
+      }
+      @media (max-width: 760px) {
+        .levels {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .level {
+        border-radius: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        background: var(--card);
+      }
+      .level b {
+        display: block;
+      }
+      .level small {
+        color: var(--muted);
+      }
+      .pill {
+        display: inline-block;
+        padding: 1px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .pill.clean {
+        background: #e3f2e6;
+        color: #1f6a2a;
+      }
+      .pill.low {
+        background: #eceff4;
+        color: #4b5563;
+      }
+      .pill.untrusted {
+        background: #fff1cc;
+        color: #7a5200;
+      }
+      .pill.suspicious {
+        background: #c62828;
+        color: #fff;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        align-items: start;
+      }
+      @media (max-width: 860px) {
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Checklist */
+      .checks {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 28px;
+      }
+      @media (max-width: 760px) {
+        .checks {
+          grid-template-columns: 1fr;
+        }
+      }
+      .checks li {
+        position: relative;
+        padding-left: 30px;
+      }
+      .checks li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--ok);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 20px;
+        text-align: center;
+      }
+      .checks b {
+        display: block;
+      }
+      .checks span {
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      /* Code */
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 18px 20px;
+        border-radius: 12px;
+        overflow-x: auto;
+        font-size: 14.5px;
+        line-height: 1.55;
+        margin: 0;
+      }
+      pre .c {
+        color: #94a3b8;
+      }
+      .code-title {
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+
+      /* FAQ */
+      details {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 18px;
+        background: var(--card);
+        margin-bottom: 10px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      details p {
+        color: var(--muted);
+        margin: 10px 0 0;
+      }
+
+      /* Footer */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 32px 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      footer .wrap {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+
+      /* Lightbox */
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 8, 15, 0.86);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 50;
+        cursor: zoom-out;
+      }
+      .lightbox.open {
+        display: flex;
+      }
+      .lightbox img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 10px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+      .lightbox button {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        font-size: 28px;
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap">
+        <a class="logo" href="#top" aria-label="Snipe home">
+          <svg viewBox="0 0 512 512" aria-hidden="true">
+            <rect width="512" height="512" rx="112" fill="#2563eb" />
+            <circle cx="256" cy="256" r="150" fill="none" stroke="#fff" stroke-width="36" />
+            <circle cx="256" cy="256" r="34" fill="#fff" />
+            <path d="M256 60v110M256 342v110M60 256h110M342 256h110" stroke="#fff" stroke-width="36" stroke-linecap="round" />
+          </svg>
+          Snipe
+        </a>
+        <nav class="nav-links" aria-label="Sections">
+          <a href="#features">Features</a>
+          <a href="#tour">Screenshots</a>
+          <a href="#how">How it works</a>
+          <a href="#untrusted">Untrusted software</a>
+          <a href="#safety">Safety</a>
+          <a href="#get">Download</a>
+        </nav>
+        <a class="btn small" href="https://github.com/arteficent/snipe">GitHub</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="wrap">
+          <span class="badge">Free &amp; open source · Windows 10 / 11</span>
+          <h1>Uninstall anything.<br />Leave nothing behind.</h1>
+          <p class="lead">
+            Snipe lists everything installed on your PC, from programs and Store apps to drivers, services, startup
+            entries, packages and SDKs. It flags software you shouldn't trust and removes things completely, leftovers
+            included, with backups and one-click undo.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="https://github.com/arteficent/snipe/releases/latest">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M3 5.5 10.5 4.4v7.1H3zm0 13L10.5 19.6v-7.1H3zm8.4 1.2L21 21v-8.5h-9.6zm0-15.4v7.2H21V3z" />
+              </svg>
+              Download for Windows
+            </a>
+            <a class="btn" href="#how">See how it works</a>
+          </div>
+          <p class="fineprint">x64 &amp; x86 installers · about 3.5 MB · MIT OR Apache-2.0</p>
+
+          <div class="frame">
+            <div class="bar" aria-hidden="true"><span></span><span></span><span></span></div>
+            <img
+              class="zoomable"
+              src="images/overview.png"
+              alt="Snipe main window: categories on the left, filter bar, a sortable table of installed items with protection and risk badges, and a details pane for Mozilla Firefox."
+              width="2400"
+              height="1410"
+            />
+          </div>
+
+          <div class="stats" aria-label="At a glance">
+            <div class="stat"><b>14</b><span>inventory sources</span></div>
+            <div class="stat"><b>Seconds</b><span>for a full scan</span></div>
+            <div class="stat"><b>Undo</b><span>for every cleanup</span></div>
+            <div class="stat"><b>Offline</b><span>signature checks</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <section id="features">
+        <div class="wrap">
+          <h2>Everything on your PC, in one place</h2>
+          <p class="section-lead">
+            Snipe reads the same sources Windows uses, in parallel, and shows them in one fast, searchable list.
+          </p>
+          <div class="grid">
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 14h8" /></svg>
+              </div>
+              <h3>Complete inventory</h3>
+              <p>
+                Programs, MSI products, Store apps, Windows features &amp; updates, drivers, services, scheduled tasks,
+                startup entries and running processes.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h6" /><circle cx="18" cy="16" r="3" /></svg>
+              </div>
+              <h3>Packages &amp; SDKs</h3>
+              <p>
+                npm, pip, cargo, Chocolatey, Scoop and dotnet tools, PowerShell modules, and .NET, Python, Java, Rust,
+                Node, Windows and Android SDKs, plus developer caches with their sizes.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" /><path d="M12 8v5M12 16h.01" /></svg>
+              </div>
+              <h3>Untrusted software detection</h3>
+              <p>
+                Checks digital signatures and spots warning signs: fake system file names, temp-folder executables,
+                double extensions, hidden autostarts.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16l-1.5 13h-13z" /><path d="M9 7V4h6v3M10 11v6M14 11v6" /></svg>
+              </div>
+              <h3>Deep uninstall</h3>
+              <p>
+                Runs the vendor's uninstaller, then finds the folders, registry keys, shortcuts, services and tasks
+                left behind, scored by confidence.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+              </div>
+              <h3>Backups &amp; undo</h3>
+              <p>
+                Files are quarantined and registry data is exported before anything is deleted. Every removal can be
+                undone from History.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+              </div>
+              <h3>Powerful filters</h3>
+              <p>
+                Narrow down by protection level, risk, signature, scope, user, type, architecture, publisher or package
+                manager, with instant search.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screenshot tour -->
+      <section id="tour" class="soft">
+        <div class="wrap center">
+          <h2>Take the tour</h2>
+          <p class="section-lead">Click a tab to see each part of the app. Click any screenshot to view it full size.</p>
+          <div class="tabs" role="tablist" aria-label="Screenshots">
+            <button class="tab" role="tab" aria-selected="true" data-shot="0">Inventory</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="1">Untrusted &amp; suspicious</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="2">Uninstall plan</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="3">Leftover review</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="4">Remove threat</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="5">History &amp; undo</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="6">Dark mode</button>
+          </div>
+          <div class="tour" role="tabpanel" aria-live="polite">
+            <div class="frame" id="tour-frame">
+              <img id="tour-img" class="zoomable" src="images/overview.png" alt="" />
+            </div>
+            <p class="tour-caption" id="tour-caption"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how">
+        <div class="wrap">
+          <h2>How it works</h2>
+          <p class="section-lead">Four steps. Nothing is removed until you've seen exactly what will happen.</p>
+          <div class="steps">
+            <div class="step">
+              <div class="step-text">
+                <span class="step-num">1</span>
+                <h3>Scan &amp; find</h3>
+                <p>
+                  Snipe opens instantly from its cache and refreshes in a few seconds, with results streaming in as
+                  each source finishes. Pick a category on the left, type in the search box, or combine filters.
+                </p>
+                <ul>
+                  <li>Badges show how safe each item is to remove.</li>
+                  <li>A green ✓ means the file is signed by a trusted publisher.</li>
+                  <li>Select an item to see its location, signature and removal methods.</li>
+                </ul>
+              </div>
+              <div class="frame">
+                <img class="zoomable" src="images/overview.png" alt="Inventory with Firefox selected and its details pane open." loading="lazy" />
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-text">
+                <span class="step-num">2</span>
+                <h3>Check the plan</h3>
+                <p>
+                  <b>Uninstall…</b> shows what will happen first: the removal method, running processes that will be
+                  closed, and any warnings about shared components.
+                </p>
+                <ul>
+                  <li>Silent mode for uninstallers that support it.</li>
+                  <li>Optional System Restore point.</li>
+                  <li>Administrator rights are requested only when needed.</li>
+                </ul>
+              </div>
+              <div class="frame">
+                <img class="zoomable" src="images/uninstall-plan.png" alt="Uninstall dialog showing the removal method, options and the process that will be closed." loading="lazy" />
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-text">
+                <span class="step-num">3</span>
+                <h3>Review the leftovers</h3>
+                <p>
+                  After the uninstaller finishes, Snipe searches for what it left behind and scores every finding.
+                  High-confidence items are pre-selected; the rest are yours to decide.
+                </p>
+                <ul>
+                  <li>Folders in Program Files, AppData and ProgramData.</li>
+                  <li>Registry keys, COM classes, shortcuts, services, tasks and PATH entries.</li>
+                  <li>Windows system locations are never touched.</li>
+                </ul>
+              </div>
+              <div class="frame">
+                <img class="zoomable" src="images/uninstall-leftovers.png" alt="Leftover review listing folders, registry keys and tasks with confidence scores and checkboxes." loading="lazy" />
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-text">
+                <span class="step-num">4</span>
+                <h3>Clean up, safely</h3>
+                <p>
+                  Selected leftovers are backed up, then removed. Changed your mind? Open <b>History</b> and click
+                  <b>Undo</b> to put back the files, registry data, tasks and services Snipe removed.
+                </p>
+                <ul>
+                  <li>Files in use are deleted at the next restart.</li>
+                  <li>Backups are kept for 30 days.</li>
+                </ul>
+              </div>
+              <div class="frame dialog">
+                <img class="zoomable" src="images/history.png" alt="History dialog listing past removals with Undo buttons." loading="lazy" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Untrusted software -->
+      <section id="untrusted" class="soft">
+        <div class="wrap">
+          <h2>Spot software you shouldn't trust</h2>
+          <p class="section-lead">
+            Snipe verifies the digital signature of every program, process, service, startup entry and scheduled task,
+            including Windows catalog signatures, and looks for the tricks malware commonly uses. Everything that scores
+            40 or more appears under <b>Untrusted &amp; suspicious</b>.
+          </p>
+          <div class="frame">
+            <img class="zoomable" src="images/threats.png" alt="Untrusted and suspicious view with a suspicious service selected and its risk reasons listed." loading="lazy" />
+          </div>
+          <div class="levels" aria-label="Risk levels">
+            <div class="level"><span class="pill clean">0</span><b>Clean</b><small>Signed by a trusted publisher, nothing unusual.</small></div>
+            <div class="level"><span class="pill low">1–39</span><b>Low</b><small>Minor signals, e.g. an unsigned app in Program Files.</small></div>
+            <div class="level"><span class="pill untrusted">40–69</span><b>Untrusted</b><small>Unsigned or self-signed and running from user folders or at startup.</small></div>
+            <div class="level"><span class="pill suspicious">70+</span><b>Suspicious</b><small>Tampered signature, fake system names, double extensions, encoded scripts.</small></div>
+          </div>
+          <div class="two" style="margin-top: 32px">
+            <div>
+              <h3>Remove a threat in one go</h3>
+              <p class="section-lead" style="margin-bottom: 16px">
+                <b>Remove threat…</b> stops the running copies, removes every startup entry, scheduled task and service
+                that launches the file, and moves the file to quarantine, all reviewable and undoable.
+              </p>
+              <div class="frame dialog">
+                <img class="zoomable" src="images/threat-plan.png" alt="Remove threat dialog explaining the risk and what will be removed." loading="lazy" />
+              </div>
+            </div>
+            <div>
+              <h3>Get a second opinion</h3>
+              <p class="section-lead" style="margin-bottom: 16px">
+                <b>Scan with Defender</b> asks Microsoft Defender for a verdict on that single file without changing
+                anything. Risk scores are heuristics, not an antivirus verdict.
+              </p>
+              <div class="frame dialog">
+                <img class="zoomable" src="images/threat-review.png" alt="Review list for removing a threat: running instances, startup entry, task, file and folder." loading="lazy" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Safety -->
+      <section id="safety">
+        <div class="wrap">
+          <h2>Built to never break Windows</h2>
+          <p class="section-lead">Deleting things with administrator rights is serious. Snipe is careful by design.</p>
+          <ul class="checks">
+            <li><b>Hard deny-list</b><span>Windows folders, profile roots and critical registry keys are never deleted, whatever the score.</span></li>
+            <li><b>Quarantine, not delete</b><span>Files are moved aside and registry data is exported before removal, so Undo can restore them.</span></li>
+            <li><b>Least privilege</b><span>The UI runs as you. A separate elevated helper starts only when needed and accepts item IDs, never paths or commands.</span></li>
+            <li><b>Your uninstallers stay yours</b><span>Uninstallers registered by a single user always run without admin rights.</span></li>
+            <li><b>Protected items are locked</b><span>Critical processes, Windows services and system components are shown but can't be removed.</span></li>
+            <li><b>No junction tricks</b><span>Links are never followed during deletion, and every path is re-checked after resolving it.</span></li>
+            <li><b>Restore points</b><span>Create a System Restore point before any uninstall with one checkbox.</span></li>
+            <li><b>Open source</b><span>Every line is on GitHub under MIT OR Apache-2.0.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Get started -->
+      <section id="get" class="soft">
+        <div class="wrap">
+          <h2>Get started</h2>
+          <div class="two">
+            <div class="card">
+              <h3 style="margin-top: 0">Install</h3>
+              <ol>
+                <li>
+                  Download <code>Snipe_&lt;version&gt;_x64-setup.exe</code> (or <code>_x86</code> for 32-bit Windows)
+                  from <a href="https://github.com/arteficent/snipe/releases/latest">Releases</a>.
+                </li>
+                <li>Run it. It installs for your user only and fetches the WebView2 runtime if it's missing.</li>
+                <li>Open <b>Snipe</b> from the Start menu.</li>
+              </ol>
+              <p style="color: var(--muted); font-size: 15px">
+                Installers aren't code-signed yet, so Windows SmartScreen may ask you to confirm with
+                <i>More info → Run anyway</i>.
+              </p>
+              <a class="btn primary" href="https://github.com/arteficent/snipe/releases/latest">Download latest release</a>
+            </div>
+            <div class="card">
+              <h3 style="margin-top: 0">Use</h3>
+              <ol>
+                <li>Choose a category in the sidebar, or search.</li>
+                <li>Select an item to see its details, signature and risk.</li>
+                <li>Click <b>Uninstall…</b>, check the plan, and review leftovers.</li>
+                <li>Click <b>Admin session</b> to include Windows features and updates.</li>
+                <li>Use <b>History → Undo</b> if you need anything back.</li>
+                <li>Use <b>Export CSV / JSON</b> to save the inventory.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="two" style="margin-top: 22px">
+            <div>
+              <p class="code-title">Command-line interface</p>
+              <pre><code>snipe-cli scan                 <span class="c"># summary per source</span>
+snipe-cli list chrome          <span class="c"># items matching "chrome"</span>
+snipe-cli threats              <span class="c"># untrusted / suspicious items</span>
+snipe-cli plan &lt;id&gt;            <span class="c"># uninstall plan, no changes</span>
+snipe-cli leftovers &lt;id&gt;       <span class="c"># dry-run leftover scan</span>
+snipe-cli export --format csv --out inventory.csv</code></pre>
+            </div>
+            <div>
+              <p class="code-title">Build from source</p>
+              <pre><code><span class="c"># Rust (rustup), VS Build Tools (C++), Node.js 20+</span>
+git clone https://github.com/arteficent/snipe.git
+cd snipe/app
+npm ci
+npm run tauri dev                      <span class="c"># run with hot reload</span>
+npm run tauri build -- --bundles nsis  <span class="c"># installer</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq">
+        <div class="wrap">
+          <h2>Questions</h2>
+          <details>
+            <summary>Is Snipe an antivirus?</summary>
+            <p>
+              No. Snipe flags software that lacks a trusted signature or behaves like common malware persistence so you
+              can review it. It can't detect validly signed or well-disguised malware. Use “Scan with Defender” or your
+              antivirus for a verdict.
+            </p>
+          </details>
+          <details>
+            <summary>Does it need administrator rights?</summary>
+            <p>
+              Browsing doesn't. Uninstalling, cleaning leftovers, History and scanning Windows features ask for
+              permission once per session through the normal Windows UAC prompt.
+            </p>
+          </details>
+          <details>
+            <summary>What if it removes something I needed?</summary>
+            <p>
+              Open History and click Undo: quarantined files, registry data, scheduled tasks and services are put back.
+              To roll back an uninstaller itself, use the System Restore point Snipe can create first.
+            </p>
+          </details>
+          <details>
+            <summary>Will it touch Windows itself?</summary>
+            <p>
+              Windows components are shown but locked, and Windows folders and critical registry keys are on a hard
+              deny-list. Windows features and updates are only changed through Microsoft's own DISM tool, and only when
+              you ask.
+            </p>
+          </details>
+          <details>
+            <summary>Does it send any data anywhere?</summary>
+            <p>No. Snipe works entirely offline; signature checks don't use the network.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <span>© 2026 Sourabh Singh and Snipe contributors · MIT OR Apache-2.0</span>
+        <span>
+          <a href="https://github.com/arteficent/snipe">GitHub</a> ·
+          <a href="https://github.com/arteficent/snipe/releases">Releases</a> ·
+          <a href="https://github.com/arteficent/snipe/blob/main/docs/ARCHITECTURE_AND_PLAN.md">Architecture</a> ·
+          <a href="https://github.com/arteficent/snipe/issues">Report an issue</a>
+        </span>
+      </div>
+    </footer>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot">
+      <button type="button" aria-label="Close">×</button>
+      <img alt="" />
+    </div>
+
+    <script>
+      const shots = [
+        ["images/overview.png", "The inventory: every installed item with protection badges, a trusted-signature check and a details pane.", false],
+        ["images/threats.png", "Untrusted & suspicious: items with a risk score of 40 or more, with the reasons spelled out.", false],
+        ["images/uninstall-plan.png", "The uninstall plan: method, options and the processes that will be closed, shown before anything happens.", false],
+        ["images/uninstall-leftovers.png", "Leftover review: everything the uninstaller left behind, scored by confidence. You choose what goes.", false],
+        ["images/threat-review.png", "Remove threat: running instances, autostart entries and the file itself, all backed up first.", true],
+        ["images/history.png", "History: every removal is a transaction you can undo.", true],
+        ["images/dark.png", "Snipe follows your Windows light or dark theme.", false],
+      ];
+      const tabs = document.querySelectorAll(".tab");
+      const img = document.getElementById("tour-img");
+      const frame = document.getElementById("tour-frame");
+      const caption = document.getElementById("tour-caption");
+      function show(i) {
+        const [src, text, dialog] = shots[i];
+        img.src = src;
+        img.alt = text;
+        caption.textContent = text;
+        frame.classList.toggle("dialog", dialog);
+        tabs.forEach((t, j) => t.setAttribute("aria-selected", String(i === j)));
+      }
+      tabs.forEach((t, i) => {
+        t.addEventListener("click", () => show(i));
+        t.addEventListener("keydown", (e) => {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          const next = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+          tabs[next].focus();
+          show(next);
+        });
+      });
+      show(0);
+
+      const box = document.getElementById("lightbox");
+      const boxImg = box.querySelector("img");
+      document.addEventListener("click", (e) => {
+        const target = e.target.closest(".zoomable");
+        if (target) {
+          boxImg.src = target.src;
+          boxImg.alt = target.alt;
+          box.classList.add("open");
+          box.querySelector("button").focus();
+        } else if (box.contains(e.target)) {
+          box.classList.remove("open");
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") box.classList.remove("open");
+      });
+    </script>
+  </body>
+</html>
