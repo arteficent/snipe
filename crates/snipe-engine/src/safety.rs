@@ -428,7 +428,7 @@ fn remove(target: &Target, dir: &Path, n: usize) -> Result<(bool, Option<Backup>
             let file = backup_file(dir, "reg", n, "reg").map_err(os_err)?;
             regio::export_value(key, "Path", &file).map_err(os_err)?;
             let (vtype, bytes) = regio::read_raw(key, "Path").map_err(os_err)?;
-            let units: Vec<u16> = bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+            let units: Vec<u16> = bytes.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
             let text = String::from_utf16_lossy(&units);
             let norm = |s: &str| s.trim().trim_end_matches('\\').to_ascii_lowercase();
             let wanted = norm(entry);

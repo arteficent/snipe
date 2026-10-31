@@ -90,7 +90,7 @@ pub fn format_value_line(name: &str, vtype: u32, bytes: &[u8]) -> String {
     let lhs = if name.is_empty() { "@".to_string() } else { format!("\"{}\"", reg_escape(name)) };
     let rhs = match vtype {
         1 => {
-            let units: Vec<u16> = bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+            let units: Vec<u16> = bytes.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
             let text = String::from_utf16_lossy(&units);
             format!("\"{}\"", reg_escape(text.trim_end_matches('\0')))
         }

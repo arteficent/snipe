@@ -72,7 +72,7 @@ snipe-cli --version
 | Tool | Version |
 |------|---------|
 | Windows | 10 or 11 (x64 or x86) |
-| [Rust](https://rustup.rs) | 1.88 or newer, MSVC toolchain (`stable-x86_64-pc-windows-msvc`) |
+| [Rust](https://rustup.rs) | via rustup; the toolchain is pinned in `rust-toolchain.toml` and installed automatically (MSVC) |
 | Visual Studio Build Tools | "Desktop development with C++" workload |
 | [Node.js](https://nodejs.org) | 20 or newer |
 | WebView2 Runtime | Included with Windows 10/11 |

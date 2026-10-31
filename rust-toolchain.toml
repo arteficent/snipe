@@ -1,0 +1,6 @@
+[toolchain]
+# Pinned so new clippy lints in a fresh stable release don't break CI unexpectedly.
+channel = "1.99.1"
+components = ["clippy", "rustfmt"]
+targets = ["x86_64-pc-windows-msvc", "i686-pc-windows-msvc"]
+profile = "minimal"
