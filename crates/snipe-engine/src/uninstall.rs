@@ -65,9 +65,57 @@ pub fn plan(item: &Item) -> Plan {
         warnings.push(format!("{} running process(es) will be closed first.", processes.len()));
     }
     let can_force = matches!(item.kind, ItemKind::Win32 | ItemKind::Msi | ItemKind::Appx)
-        && !matches!(item.protection, Protection::Locked | Protection::System);
-    Plan { item: item.clone(), blocked: item.removal_block().map(str::to_string), warnings, methods, processes, can_force }
+        && !matches!(item.protection, Protection::Locked | Protection::System)
+        || item.protection == Protection::Guarded
+            && matches!(item.kind, ItemKind::Service | ItemKind::Process | ItemKind::Driver | ItemKind::Win32 | ItemKind::Msi);
+    let tiers = tiers(item, can_force);
+    Plan { item: item.clone(), blocked: item.removal_block().map(str::to_string), warnings, methods, processes, can_force, tiers }
 }
+
+/// The removal ladder (§5.3) for an item: which rungs apply and why.
+fn tiers(item: &Item, can_force: bool) -> Vec<MethodTier> {
+    use crate::protocol::{Tier, TierInfo};
+    let locked = item.protection == Protection::Locked;
+    let has_uninstaller = !item.uninstall.is_empty() && !locked;
+    let vendor = snipe_core::vendors::lookup(&item.name, item.publisher.as_deref());
+    let guarded = item.protection == Protection::Guarded;
+    vec![
+        TierInfo {
+            tier: Tier::Standard,
+            label: "Standard".into(),
+            available: has_uninstaller,
+            detail: "Run the vendor's own uninstaller.".into(),
+        },
+        TierInfo {
+            tier: Tier::Authorized,
+            label: "Authorized".into(),
+            available: vendor.is_some(),
+            detail: vendor
+                .map(|v| format!("Supply the {} authorization. {}", v.product, v.instructions))
+                .unwrap_or_else(|| "No vendor authorization is needed for this item.".into()),
+        },
+        TierInfo {
+            tier: Tier::Force,
+            label: "Force now".into(),
+            available: can_force,
+            detail: "Stop it, delete its files, and queue anything locked for the next boot.".into(),
+        },
+        TierInfo {
+            tier: Tier::AtRestart,
+            label: "Remove at restart".into(),
+            available: guarded,
+            detail: "Reboot into Safe Mode automatically and delete it before it can start.".into(),
+        },
+        TierInfo {
+            tier: Tier::External,
+            label: "External".into(),
+            available: item.executable.is_some(),
+            detail: "Hand off to Microsoft Defender Offline or a vendor cleanup tool.".into(),
+        },
+    ]
+}
+
+type MethodTier = crate::protocol::TierInfo;
 
 struct Owned(HANDLE);
 

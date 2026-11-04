@@ -1,11 +1,13 @@
 //! Snipe's action engine: uninstall orchestration, leftover scanning, safety (backup, quarantine,
 //! undo), the inventory cache and the elevated broker that runs privileged requests.
 
+pub mod boot;
 pub mod broker;
 pub mod cache;
 pub mod engine;
 pub mod exec;
 pub mod export;
+pub mod offline;
 pub mod protocol;
 pub mod regio;
 pub mod safety;

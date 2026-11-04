@@ -193,6 +193,11 @@ pub async fn terminate(app: AppHandle, id: String) -> Result<Value, String> {
     .await
 }
 
+#[tauri::command]
+pub async fn schedule_restart_cleanup(app: AppHandle, id: String) -> Result<Value, String> {
+    blocking(app, move |state| admin_call(state, Request::ScheduleRestartCleanup { id }, &mut |_| {})).await
+}
+
 fn explorer() -> std::path::PathBuf {
     Path::new(paths::windows_dir()).join("explorer.exe")
 }

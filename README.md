@@ -18,6 +18,8 @@ Built with Rust and [Tauri 2](https://tauri.app) (WebView2) and a Svelte 5 UI. T
 | ![Untrusted and suspicious view with risk reasons](docs/images/threats.png) | ![Uninstall plan dialog](docs/images/uninstall-plan.png) |
 | **Leftover review** | **Remove threat** |
 | ![Leftover review with confidence scores](docs/images/uninstall-leftovers.png) | ![Remove threat review list](docs/images/threat-review.png) |
+| **Guarded item (self-protecting software)** | **Remove at restart** |
+| ![A Guarded item with Remove at restart in the details pane](docs/images/guarded-details.png) | ![Automated remove-at-restart dialog showing the removal ladder](docs/images/remove-at-restart.png) |
 | **History & undo** | **Dark mode** |
 | ![History dialog with Undo](docs/images/history.png) | ![Snipe in dark mode](docs/images/dark.png) |
 
@@ -34,6 +36,9 @@ The screenshots use fictional demo data. To regenerate them, see [Updating scree
   - SDKs and runtimes: .NET, Python, Windows SDK, Java, Rust toolchains, Visual Studio, Node versions and the Android SDK.
   - Developer and temp caches, with their sizes.
 - **Filters.** You can filter by protection level, scope, user, type, architecture, publisher, package manager, system flag, risk and signature, and use instant search.
+- **Owner control.** You decide what stays on your PC. Software that protects itself — a protected process, an anti-tamper driver, or anything Snipe cannot inspect — is marked **Guarded** rather than hidden as "Locked", and can still be removed. Only items that are proven to belong to Windows and are critical to it (Windows File Protection, a TrustedInstaller owner, or a Microsoft Windows signature) stay **Locked**. A trojan dropped into a Windows folder is *not* treated as part of Windows.
+  - **Removal ladder.** Standard uninstaller → vendor authorization (uninstall password or token) → Force now → **Remove at restart** → external hand-off. Each rung is offered only when the one before it cannot work.
+  - **Remove at restart** is fully automated: confirm once and Snipe reboots into Safe Mode, where the self-protecting software does not start, deletes it, and reboots back to your desktop — no further prompts. BitLocker is suspended just for the two cleanup reboots, and everything removed is backed up and undoable.
 - **Untrusted software detection.**
   - Snipe verifies Authenticode signatures: embedded signatures and Windows catalogs, checked offline.
   - It also applies heuristics: self-signed or tampered signatures, files in temp or user folders, imitation Windows system file names, double extensions, hidden files, encoded PowerShell or remote downloads at startup.
@@ -44,6 +49,7 @@ The screenshots use fictional demo data. To regenerate them, see [Updating scree
   - Snipe creates a restore point, closes running processes, then runs the uninstaller (MSI, Win32, AppX, DISM, pnputil or a package manager). Uninstallers run inside a job object, and Inno Setup and NSIS uninstallers can run silently.
   - It then scans for leftovers and scores each one by confidence. You review the list, and selected items are removed with backup.
   - **Force remove** handles programs whose uninstaller is broken or missing.
+  - **Remove at restart** removes software that protects itself: Snipe reboots into Safe Mode automatically, deletes it where it cannot defend itself, and reboots back — all with one confirmation.
 - **Safety.**
   - A hard deny-list protects Windows paths and registry keys.
   - Removed files are moved to quarantine instead of deleted, and registry data is exported to `.reg` backups.

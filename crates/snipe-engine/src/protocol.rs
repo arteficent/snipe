@@ -43,6 +43,10 @@ pub enum Request {
     History,
     Undo { txn: String },
     Terminate { id: String },
+    /// Schedule a fully automated restart-time (Safe Mode) removal of a Guarded item.
+    ScheduleRestartCleanup { id: String },
+    /// Cancel a pending restart-time cleanup before the machine reboots.
+    CancelRestartCleanup,
     /// Leftover-style removal plan for an untrusted executable and its persistence.
     Threat { id: String },
     /// On-demand Microsoft Defender scan of the item's executable.
@@ -87,6 +91,38 @@ pub struct Plan {
     pub processes: Vec<ProcInfo>,
     /// Leftover cleanup without running an uninstaller is possible.
     pub can_force: bool,
+    /// The removal ladder (§5.3): each tier and whether it applies to this item.
+    pub tiers: Vec<TierInfo>,
+}
+
+/// A rung on the removal ladder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Tier {
+    Standard,
+    Authorized,
+    Force,
+    AtRestart,
+    External,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TierInfo {
+    pub tier: Tier,
+    pub label: String,
+    /// True when this tier applies to the item and can be used.
+    pub available: bool,
+    pub detail: String,
+}
+
+/// Result of scheduling a restart-time cleanup.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestartSchedule {
+    pub txn: String,
+    pub scheduled: bool,
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -109,6 +145,9 @@ pub enum Target {
     RegKey { key: RegPath },
     RegValue { key: RegPath, name: String },
     Service { name: String },
+    /// Disable a service's autostart (Start=4) and delete it, for services that
+    /// cannot be stopped while running. The previous start type is backed up.
+    ServiceDisable { name: String },
     Task { path: String },
     EnvPath { key: RegPath, entry: String },
     /// Terminate every process running this image.
@@ -122,6 +161,7 @@ impl Target {
             Target::RegKey { key } => key.to_string(),
             Target::RegValue { key, name } => format!("{key} → {}", if name.is_empty() { "(Default)" } else { name }),
             Target::Service { name } => format!("Service {name}"),
+            Target::ServiceDisable { name } => format!("Disable and delete service {name}"),
             Target::Task { path } => format!("Scheduled task {path}"),
             Target::EnvPath { key, entry } => format!("PATH entry {entry} ({key})"),
             Target::Process { path } => format!("Stop running instances of {path}"),

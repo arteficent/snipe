@@ -212,6 +212,9 @@
   .badge.system {
     background: var(--badge-system);
   }
+  .badge.guarded {
+    background: var(--badge-guarded);
+  }
   .badge.locked {
     background: var(--badge-locked);
   }

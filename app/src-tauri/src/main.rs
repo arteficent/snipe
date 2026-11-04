@@ -5,6 +5,17 @@ mod commands;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("--offline-agent") {
+        // Unattended Safe Mode cleanup; reboots to normal mode when done.
+        let code = match snipe_engine::offline::run_agent() {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("offline-agent: {e}");
+                1
+            }
+        };
+        std::process::exit(code);
+    }
     if args.get(1).map(String::as_str) == Some("--broker") {
         let pipe = args.get(2).cloned().unwrap_or_default();
         let pid = args.get(3).and_then(|p| p.parse().ok()).unwrap_or(0);
@@ -33,6 +44,7 @@ fn main() {
             commands::history,
             commands::undo,
             commands::terminate,
+            commands::schedule_restart_cleanup,
             commands::threat,
             commands::defender_scan,
             commands::export_inventory,

@@ -1,5 +1,6 @@
 //! Win32 services via the Service Control Manager.
 
+use crate::ownership;
 use crate::util::pwstr_to_string;
 use snipe_core::{CollectResult, Collector, Item, ItemKind, Protection, UninstallMethod, paths};
 use windows::Win32::Foundation::ERROR_MORE_DATA;
@@ -7,7 +8,7 @@ use windows::Win32::System::Services::{
     CloseServiceHandle, ENUM_SERVICE_STATUS_PROCESSW, EnumServicesStatusExW, OpenSCManagerW, OpenServiceW,
     QUERY_SERVICE_CONFIGW, QueryServiceConfigW, SC_ENUM_PROCESS_INFO, SC_HANDLE, SC_MANAGER_CONNECT,
     SC_MANAGER_ENUMERATE_SERVICE, SERVICE_AUTO_START, SERVICE_BOOT_START, SERVICE_DEMAND_START,
-    SERVICE_DISABLED, SERVICE_PAUSED, SERVICE_QUERY_CONFIG, SERVICE_RUNNING, SERVICE_STATE_ALL,
+    SERVICE_DISABLED, SERVICE_DRIVER, SERVICE_PAUSED, SERVICE_QUERY_CONFIG, SERVICE_RUNNING, SERVICE_STATE_ALL,
     SERVICE_STOPPED, SERVICE_SYSTEM_START, SERVICE_WIN32,
 };
 use windows::core::PCWSTR;
@@ -54,7 +55,7 @@ impl Collector for ServicesCollector {
                 let res = EnumServicesStatusExW(
                     scm.0,
                     SC_ENUM_PROCESS_INFO,
-                    SERVICE_WIN32,
+                    SERVICE_WIN32 | SERVICE_DRIVER,
                     SERVICE_STATE_ALL,
                     Some(bytes),
                     &mut needed,
@@ -137,13 +138,29 @@ unsafe fn read_service(scm: &ScHandle, entry: &ENUM_SERVICE_STATUS_PROCESSW) -> 
     }
     let executable = service_dll.or(exe);
     item.executable = executable.clone();
-    let in_windows = executable.as_deref().is_none_or(paths::is_windows_path);
-    if in_windows {
-        item.protection = Protection::Locked;
-        item.hidden = true;
-    } else {
-        item.install_location = executable.as_deref().and_then(paths::parent_dir);
-        item.uninstall.push(UninstallMethod::Service { name });
+    match executable.as_deref() {
+        // Unreadable configuration: the service hardened itself against inspection.
+        // Guarded, not Windows-owned, and still removable through the ladder.
+        None => {
+            item.protection = Protection::Guarded;
+            item.hidden = true;
+            item.uninstall.push(UninstallMethod::Service { name });
+        }
+        Some(path) if paths::is_windows_path(path) => {
+            if ownership::is_windows_owned(path) {
+                item.protection = Protection::Locked;
+                item.hidden = true;
+            } else {
+                // Third-party service or driver image living in a Windows folder.
+                item.protection = Protection::Guarded;
+                item.install_location = paths::parent_dir(path);
+                item.uninstall.push(UninstallMethod::Service { name });
+            }
+        }
+        Some(path) => {
+            item.install_location = paths::parent_dir(path);
+            item.uninstall.push(UninstallMethod::Service { name });
+        }
     }
     item
 }

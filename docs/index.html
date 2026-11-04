@@ -726,6 +726,16 @@
             </article>
             <article class="card">
               <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8" /><path d="M3 3v5h5" /><path d="M12 8v4l3 2" /></svg>
+              </div>
+              <h3>Remove at restart</h3>
+              <p>
+                Software that protects itself — EDR agents, anti-tamper drivers, protected processes — is removed
+                automatically: Snipe reboots into Safe Mode, deletes it where it can't defend itself, and reboots back.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
               </div>
               <h3>Backups &amp; undo</h3>
@@ -759,6 +769,8 @@
             <button class="tab" role="tab" aria-selected="false" data-shot="2">Uninstall plan</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="3">Leftover review</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="4">Remove threat</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="7">Guarded item</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="8">Remove at restart</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="5">History &amp; undo</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="6">Dark mode</button>
           </div>
@@ -905,7 +917,7 @@
             <li><b>Quarantine, not delete</b><span>Files are moved aside and registry data is exported before removal, so Undo can restore them.</span></li>
             <li><b>Least privilege</b><span>The UI runs as you. A separate elevated helper starts only when needed and accepts item IDs, never paths or commands.</span></li>
             <li><b>Your uninstallers stay yours</b><span>Uninstallers registered by a single user always run without admin rights.</span></li>
-            <li><b>Protected items are locked</b><span>Critical processes, Windows services and system components are shown but can't be removed.</span></li>
+            <li><b>You own your PC</b><span>Software that protects itself is marked Guarded and can still be removed — automatically at restart if needed. Only items proven to belong to Windows and critical to it stay locked.</span></li>
             <li><b>No junction tricks</b><span>Links are never followed during deletion, and every path is re-checked after resolving it.</span></li>
             <li><b>Restore points</b><span>Create a System Restore point before any uninstall with one checkbox.</span></li>
             <li><b>Open source</b><span>Every line is on GitHub under MIT OR Apache-2.0.</span></li>
@@ -1038,6 +1050,8 @@ npm run tauri build -- --bundles nsis  <span class="c"># installer</span></code>
         ["images/threat-review.png", "Remove threat: running instances, autostart entries and the file itself, all backed up first.", true],
         ["images/history.png", "History: every removal is a transaction you can undo.", true],
         ["images/dark.png", "Snipe follows your Windows light or dark theme.", false],
+        ["images/guarded-details.png", "Guarded: self-protecting software stays removable, with Remove at restart in the details pane.", false],
+        ["images/remove-at-restart.png", "Remove at restart: the removal ladder. Confirm once and Snipe reboots into Safe Mode, deletes it, and reboots back — automatically.", true],
       ];
       const tabs = document.querySelectorAll(".tab");
       const img = document.getElementById("tour-img");

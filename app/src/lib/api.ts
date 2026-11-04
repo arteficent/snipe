@@ -30,6 +30,7 @@ export const clean = (txn: string, ids: string[]) => invoke<CleanReport>("clean"
 export const history = () => invoke<TxnSummary[]>("history");
 export const undo = (txn: string) => invoke<UndoReport>("undo", { txn });
 export const terminate = (id: string) => invoke<null>("terminate", { id });
+export const scheduleRestartCleanup = (id: string) => invoke<null>("schedule_restart_cleanup", { id });
 export const threat = (id: string) => invoke<LeftoverReport>("threat", { id });
 export const defenderScan = (id: string) => invoke<string>("defender_scan", { id });
 export const exportInventory = (format: "csv" | "json") => invoke<string>("export_inventory", { format });

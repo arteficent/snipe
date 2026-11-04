@@ -102,6 +102,12 @@
       reasons: ["not digitally signed", "runs from a user-writable folder"],
       uninstall: cmd(`"${HOME}\\AppData\\Local\\Programs\\PDF Converter Pro\\uninst.exe"`),
     }),
+    item("win32", "Cortex XDR", {
+      version: "8.4.1.40667", publisher: "Palo Alto Networks", location: "C:\\Program Files\\Palo Alto Networks\\Traps", date: "2026-09-30",
+      size: 611 * MB, protection: "guarded", exe: "C:\\Program Files\\Palo Alto Networks\\Traps\\cytool.exe", signature: trusted("Palo Alto Networks"),
+      uninstall: cmd('MsiExec.exe /X{AC7F8E92-3B4D-4C1A-9E5F-1D2C3B4A5E6F}'),
+      details: [["Note", "Tamper protection blocks removal until it is disabled or the uninstall password is supplied"], ["Registry key", "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Cortex XDR"]],
+    }),
     item("appx", "Windows Terminal", { version: "1.23.12811.0", publisher: "Microsoft Corporation", user: true, date: "2026-10-12", signature: trusted("Microsoft Corporation"), uninstall: [{ type: "appx", packageFullName: "Microsoft.WindowsTerminal_1.23.12811.0_x64__8wekyb3d8bbwe" }] }),
     item("appx", "WhatsApp", { version: "2.2541.4.0", publisher: "WhatsApp Inc.", user: true, date: "2026-10-22", signature: trusted("WhatsApp Inc."), uninstall: [{ type: "appx", packageFullName: "5319275A.WhatsAppDesktop_2.2541.4.0_x64__cv1g1gvanyjgm" }] }),
     item("appx", "Calculator", { version: "11.2508.4.0", publisher: "Microsoft Corporation", user: true, protection: "system", signature: trusted("Microsoft Corporation"), uninstall: [{ type: "appx", packageFullName: "Microsoft.WindowsCalculator_11.2508.4.0_x64__8wekyb3d8bbwe" }] }),
@@ -109,6 +115,10 @@
     item("feature", "VirtualMachinePlatform", { publisher: "Microsoft Corporation", protection: "system", uninstall: [{ type: "feature", name: "VirtualMachinePlatform" }] }),
     item("update", "Package_for_KB5066835", { version: "26100.6899.1.11", publisher: "Microsoft Corporation", date: "2026-10-14", protection: "system", uninstall: [{ type: "update", package: "Package_for_KB5066835~31bf3856ad364e35~amd64~~26100.6899.1.11" }] }),
     item("driver", "NVIDIA GeForce RTX 4060 Laptop GPU (oem42.inf)", { version: "32.0.15.8157", publisher: "NVIDIA", date: "2026-09-18", protection: "shared", uninstall: [{ type: "driver", inf: "oem42.inf" }] }),
+    item("service", "Cortex XDR Service (anti-tamper)", {
+      account: "LocalSystem", protection: "guarded", hidden: true, exe: "C:\\Program Files\\Palo Alto Networks\\Traps\\cyserver.exe", signature: trusted("Palo Alto Networks"),
+      uninstall: [{ type: "service", name: "cyserver" }], details: [["State", "Running"], ["Start type", "Automatic"], ["Note", "Configuration is locked by the agent; remove at restart"]],
+    }),
     item("service", "Docker Desktop Service", { publisher: "Docker Inc.", account: "LocalSystem", exe: "C:\\Program Files\\Docker\\Docker\\com.docker.service", signature: trusted("Docker Inc"), uninstall: [{ type: "service", name: "com.docker.service" }], details: [["State", "Running"], ["Start type", "Automatic"]] }),
     item("service", "Windows Update", { account: "LocalSystem", protection: "locked", hidden: true, exe: "C:\\Windows\\system32\\wuaueng.dll", signature: trusted("Microsoft Windows"), details: [["State", "Running"], ["Service name", "wuauserv"]] }),
     item("service", "Update Helper Service", {
@@ -132,6 +142,7 @@
     }),
     item("process", "firefox.exe", { user: true, exe: "C:\\Program Files\\Mozilla Firefox\\firefox.exe", location: "C:\\Program Files\\Mozilla Firefox", signature: trusted("Mozilla Corporation"), details: [["PID", "8420"]] }),
     item("process", "Code.exe", { user: true, exe: `${HOME}\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe`, signature: trusted("Microsoft Corporation"), details: [["PID", "11032"]] }),
+    item("process", "cyserver.exe", { account: "NT AUTHORITY\\SYSTEM", protection: "guarded", hidden: true, exe: "C:\\Program Files\\Palo Alto Networks\\Traps\\cyserver.exe", signature: trusted("Palo Alto Networks"), details: [["PID", "2184"], ["Protection", "Access denied (protected process)"]] }),
     item("process", "explorer.exe", { user: true, protection: "system", hidden: true, exe: "C:\\Windows\\explorer.exe", signature: trusted("Microsoft Windows"), details: [["PID", "5144"]] }),
     item("process", "svchost.exe", { account: "NT AUTHORITY\\SYSTEM", protection: "locked", hidden: true, exe: "C:\\Windows\\System32\\svchost.exe", signature: trusted("Microsoft Windows"), details: [["PID", "1264"]] }),
     item("process", "invoice_2026.pdf.exe", {
@@ -194,10 +205,19 @@
     const processes = it.name.startsWith("Mozilla Firefox") ? [{ pid: 8420, name: "firefox.exe", path: it.executable }] : [];
     if (processes.length) warnings.push(`${processes.length} running process(es) will be closed first.`);
     const labels = { command: (m) => `Uninstaller: ${m.command}`, msi: (m) => `Windows Installer: msiexec /x ${m.productCode}` };
+    const vendor = /cortex|crowdstrike|sentinelone|sophos|palo alto/i.test(`${it.name} ${it.publisher ?? ""}`);
+    const guarded = it.protection === "guarded";
+    const tiers = [
+      { tier: "standard", label: "Standard", available: it.uninstall.length > 0 && it.protection !== "locked", detail: "Run the vendor's own uninstaller." },
+      { tier: "authorized", label: "Authorized", available: vendor, detail: vendor ? "Supply the vendor's uninstall password or token." : "No vendor authorization is needed for this item." },
+      { tier: "force", label: "Force now", available: ["win32", "msi", "appx"].includes(it.kind) || guarded, detail: "Stop it, delete its files, and queue anything locked for the next boot." },
+      { tier: "atRestart", label: "Remove at restart", available: guarded, detail: "Reboot into Safe Mode automatically and delete it before it can start." },
+      { tier: "external", label: "External", available: !!it.executable, detail: "Hand off to Microsoft Defender Offline or a vendor cleanup tool." },
+    ];
     return {
-      item: it, blocked, warnings, processes,
+      item: it, blocked, warnings, processes, tiers,
       methods: it.uninstall.map((m, index) => ({ index, label: (labels[m.type] ?? ((x) => `${x.type}`))(m), runsUnelevated: it.scope === "user", undoable: false })),
-      canForce: ["win32", "msi", "appx"].includes(it.kind),
+      canForce: ["win32", "msi", "appx"].includes(it.kind) || it.protection === "guarded",
     };
   }
 
@@ -236,6 +256,7 @@
     ],
     undo: () => ({ restored: 8, failed: [] }),
     terminate: () => null,
+    schedule_restart_cleanup: async () => (await sleep(700), null),
     defender_scan: async () => (await sleep(800), "Microsoft Defender detected a threat. Threat Trojan:Win32/Wacatac.B!ml identified."),
     export_inventory: () => `${HOME}\\Documents\\snipe-inventory-1761900000.csv`,
     open_location: () => null,

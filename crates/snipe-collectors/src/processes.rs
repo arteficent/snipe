@@ -1,5 +1,6 @@
 //! Running processes via a Toolhelp snapshot.
 
+use crate::ownership;
 use crate::util::{account_from_psid, wide_to_string};
 use snipe_core::{CollectResult, Collector, Item, ItemKind, Protection, paths};
 use std::ffi::c_void;
@@ -76,14 +77,22 @@ fn read_process(entry: &PROCESSENTRY32W) -> Item {
         item.hidden = true;
     } else {
         match &image {
+            // Third-party image outside the Windows folder: ordinary, removable.
             Some(path) if !paths::is_windows_path(path) => {}
-            Some(_) => {
-                item.protection = Protection::System;
-                item.hidden = true;
+            // Under the Windows folder: Windows-owned (System, hidden) only with proof;
+            // otherwise a third-party binary living in a Windows folder, which is Guarded.
+            Some(path) => {
+                if ownership::is_windows_owned(path) {
+                    item.protection = Protection::System;
+                    item.hidden = true;
+                } else {
+                    item.protection = Protection::Guarded;
+                }
             }
-            // Access denied: protected or other-session process.
+            // Access denied: the process protects itself. Guarded, not Locked, so the
+            // owner can still remove it through the removal ladder.
             None => {
-                item.protection = Protection::Locked;
+                item.protection = Protection::Guarded;
                 item.hidden = true;
             }
         }
