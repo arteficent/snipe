@@ -193,6 +193,9 @@
   .chip.system {
     background: var(--badge-system);
   }
+  .chip.guarded {
+    background: var(--badge-guarded);
+  }
   .chip.locked {
     background: var(--badge-locked);
   }

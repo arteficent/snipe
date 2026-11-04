@@ -5,6 +5,7 @@ pub mod date;
 pub mod deny;
 pub mod paths;
 pub mod risk;
+pub mod vendors;
 
 pub use risk::{Signature, SignatureStatus};
 
@@ -81,7 +82,11 @@ pub enum Protection {
     Shared,
     /// Ships with Windows; removable only through supported mechanisms.
     System,
-    /// Never touched by Snipe.
+    /// Third-party software that defends itself (protected process, anti-tamper
+    /// driver, or an item Snipe could not inspect). Removable by the owner through
+    /// the removal ladder, including a restart-time cleanup; never silently blocked.
+    Guarded,
+    /// Windows-owned and critical. Never touched by Snipe.
     Locked,
 }
 
@@ -321,6 +326,8 @@ mod tests {
         assert!(item.removal_block().is_some());
         item.uninstall.push(UninstallMethod::DeletePath { path: r"C:\x".into() });
         assert!(item.removal_block().is_none());
+        item.protection = Protection::Guarded;
+        assert!(item.removal_block().is_none(), "Guarded items are removable through the ladder");
         item.protection = Protection::Locked;
         assert!(item.removal_block().is_some());
         item.kind = ItemKind::Feature;

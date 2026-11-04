@@ -246,6 +246,23 @@ fn check_path(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Like `check_path`, but permits a single file (never a directory) that lives inside
+/// a deny-listed folder yet is not owned by Windows — the foreign-file exception (§7),
+/// re-checked here immediately before deletion. A trojan dropped into `System32` is
+/// removable; a Windows-owned file in the same folder is not.
+fn check_file_path(path: &str) -> Result<(), String> {
+    if check_path(path).is_ok() {
+        return Ok(());
+    }
+    let is_plain_file = std::fs::symlink_metadata(path)
+        .map(|m| m.is_file() && !is_reparse_point(&m))
+        .unwrap_or(false);
+    if is_plain_file && !snipe_collectors::ownership::is_windows_owned(path) {
+        return Ok(());
+    }
+    Err("protected location (deny-list)".into())
+}
+
 fn schedule_delete(path: &Path) -> bool {
     let wide = to_wide(&path.to_string_lossy());
     // SAFETY: valid NUL-terminated path; a null destination means delete.
@@ -346,7 +363,21 @@ fn remove(target: &Target, dir: &Path, n: usize) -> Result<(bool, Option<Backup>
             }
             if errors.is_empty() { Ok((false, None)) } else { Err(errors.join("; ")) }
         }
-        Target::File { path } | Target::Dir { path } => {
+        Target::File { path } => {
+            check_file_path(path)?;
+            let src = Path::new(path);
+            if std::fs::symlink_metadata(src).is_err() {
+                return Ok((false, None));
+            }
+            let stored = dir.join("files").join(n.to_string());
+            let pending = quarantine(src, &stored).map_err(os_err)?;
+            let backup = stored.exists().then(|| Backup::Quarantine {
+                original: path.clone(),
+                stored: stored.to_string_lossy().into_owned(),
+            });
+            Ok((pending, backup))
+        }
+        Target::Dir { path } => {
             check_path(path)?;
             let src = Path::new(path);
             if std::fs::symlink_metadata(src).is_err() {
@@ -392,8 +423,9 @@ fn remove(target: &Target, dir: &Path, n: usize) -> Result<(bool, Option<Backup>
                 .unwrap_or_default();
             if let Some(exe) = paths::exe_from_command(&image)
                 && paths::is_windows_path(&exe)
+                && snipe_collectors::ownership::is_windows_owned(&exe)
             {
-                return Err("service binary is part of Windows".into());
+                return Err("service binary is owned by Windows".into());
             }
             let file = backup_file(dir, "reg", n, "reg").map_err(os_err)?;
             regio::export_key(&key, &file).map_err(os_err)?;
@@ -402,6 +434,34 @@ fn remove(target: &Target, dir: &Path, n: usize) -> Result<(bool, Option<Backup>
             std::thread::sleep(std::time::Duration::from_secs(2));
             let (code, out) = exec::run_tool(&sc, ["delete", name.as_str()]).map_err(os_err)?;
             // 1072 = marked for deletion; finishes once all handles close or at reboot.
+            if code != 0 && code != 1072 {
+                return Err(format!("sc delete failed ({code}): {}", exec::last_line(&out)));
+            }
+            Ok((code == 1072, Some(Backup::RegFile { file: file.to_string_lossy().into_owned(), wow32: false })))
+        }
+        Target::ServiceDisable { name } => {
+            if !is_safe_identifier(name) || name.contains('\\') {
+                return Err("invalid service name".into());
+            }
+            let key = RegPath::new(format!(r"HKLM\SYSTEM\CurrentControlSet\Services\{name}"), false);
+            let image = regio::open(&key, false)
+                .ok()
+                .and_then(|k| k.get_value::<String, _>("ImagePath").ok())
+                .unwrap_or_default();
+            if let Some(exe) = paths::exe_from_command(&image)
+                && paths::is_windows_path(&exe)
+                && snipe_collectors::ownership::is_windows_owned(&exe)
+            {
+                return Err("service binary is owned by Windows".into());
+            }
+            let file = backup_file(dir, "reg", n, "reg").map_err(os_err)?;
+            regio::export_key(&key, &file).map_err(os_err)?;
+            let sc = system32("sc.exe");
+            // Disable autostart first so it cannot relaunch, then delete.
+            let _ = exec::run_tool(&sc, ["config", name.as_str(), "start=", "disabled"]);
+            let _ = exec::run_tool(&sc, ["stop", name.as_str()]);
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            let (code, out) = exec::run_tool(&sc, ["delete", name.as_str()]).map_err(os_err)?;
             if code != 0 && code != 1072 {
                 return Err(format!("sc delete failed ({code}): {}", exec::last_line(&out)));
             }

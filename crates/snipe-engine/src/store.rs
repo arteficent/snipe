@@ -94,3 +94,11 @@ pub fn data_root() -> io::Result<PathBuf> {
 pub fn txn_root() -> io::Result<PathBuf> {
     Ok(data_root()?.join("txn"))
 }
+
+/// Returns `%ProgramData%\Snipe\offline` (protected ACL), where a pending restart-time
+/// cleanup queue is stored between scheduling and the Safe Mode boot.
+pub fn offline_root() -> io::Result<PathBuf> {
+    let dir = data_root()?.join("offline");
+    std::fs::create_dir_all(&dir)?;
+    Ok(dir)
+}

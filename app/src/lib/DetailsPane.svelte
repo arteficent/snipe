@@ -2,11 +2,14 @@
   import { defenderScan, openLocation } from "./api";
   import {
     KIND_LABELS,
+    PROTECTION_LABELS,
     SIGNATURE_LABELS,
     canForce,
     canRemoveThreat,
     formatSize,
     methodLabel,
+    needsRestartRemoval,
+    protectionReason,
     removalBlock,
     riskLevel,
     type Item,
@@ -15,11 +18,12 @@
   interface Props {
     item: Item;
     onuninstall: (forced: boolean) => void;
+    onrestart: () => void;
     onthreat: () => void;
     onterminate: () => void;
   }
 
-  let { item, onuninstall, onthreat, onterminate }: Props = $props();
+  let { item, onuninstall, onrestart, onthreat, onterminate }: Props = $props();
   let error = $state<string | null>(null);
   let verdict = $state<string | null>(null);
   let scanning = $state(false);
@@ -59,7 +63,7 @@
       ["Manager", item.manager],
       ["Size", formatSize(item.sizeBytes)],
       ["Installed", item.installDate],
-      ["Protection", item.protection],
+      ["Protection", PROTECTION_LABELS[item.protection]],
       ["System flagged", item.hidden ? "yes" : null],
     ].filter(([, v]) => v) as [string, string][],
   );
@@ -71,6 +75,11 @@
   <div class="actions">
     {#if item.kind === "process"}
       <button class="danger" disabled={item.protection === "locked"} onclick={onterminate}>End process</button>
+      {#if needsRestartRemoval(item)}
+        <button onclick={onrestart} title="Reboot into Safe Mode automatically and remove it before it can start">
+          Remove at restart…
+        </button>
+      {/if}
     {:else}
       <button class="danger" disabled={block !== null} title={block ?? ""} onclick={() => onuninstall(false)}>
         {isCache ? "Clean…" : "Uninstall…"}
@@ -80,9 +89,15 @@
           Force remove…
         </button>
       {/if}
+      {#if needsRestartRemoval(item)}
+        <button onclick={onrestart} title="Reboot into Safe Mode automatically and remove it before it can start">
+          Remove at restart…
+        </button>
+      {/if}
     {/if}
   </div>
   {#if block && item.kind !== "process"}<p class="note">{block}</p>{/if}
+  {#if protectionReason(item)}<p class="note protection">{protectionReason(item)}</p>{/if}
 
   {#if item.signature || item.executable}
     <h3>Security</h3>

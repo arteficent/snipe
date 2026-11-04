@@ -34,12 +34,12 @@
   let sortKey = $state<SortKey>("name");
   let sortAsc = $state(true);
 
-  let dialog = $state<{ item: Item; mode: "uninstall" | "force" | "threat" } | null>(null);
+  let dialog = $state<{ item: Item; mode: "uninstall" | "force" | "threat" | "restart" } | null>(null);
   let version = $state("");
   let showHistory = $state(false);
 
   const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
-  const PROTECTION_ORDER = { removable: 0, shared: 1, system: 2, locked: 3 };
+  const PROTECTION_ORDER = { removable: 0, shared: 1, system: 2, guarded: 3, locked: 4 };
 
   const categoryOf = (id: string) => CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[0];
 
@@ -252,6 +252,7 @@
           <DetailsPane
             item={selected}
             onuninstall={(forced) => (dialog = { item: selected!, mode: forced ? "force" : "uninstall" })}
+            onrestart={() => (dialog = { item: selected!, mode: "restart" })}
             onthreat={() => (dialog = { item: selected!, mode: "threat" })}
             onterminate={() => terminate(selected!)}
           />

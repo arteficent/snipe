@@ -12,6 +12,7 @@
   --badge-removable: #e3f2e6;
   --badge-shared: #fff1cc;
   --badge-system: #dde8fb;
+  --badge-guarded: #ffe3c9;
   --badge-locked: #fbdcdc;
   color-scheme: light dark;
   font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
@@ -35,6 +36,7 @@
     --badge-removable: #213a28;
     --badge-shared: #4a3c14;
     --badge-system: #1f3256;
+    --badge-guarded: #5a3a16;
     --badge-locked: #4f2020;
   }
 }

@@ -1,5 +1,6 @@
 //! PowerShell modules found on every `PSModulePath` root.
 
+use crate::ownership;
 use crate::util::{current_user, env_path, read_text};
 use snipe_core::{CollectResult, Collector, Item, ItemKind, Protection, Scope, UninstallMethod, paths};
 use std::path::{Path, PathBuf};
@@ -94,9 +95,14 @@ impl Collector for ModulesCollector {
                         item.scope = Scope::User;
                         item.user = current_user();
                     }
-                    if in_windows {
+                    if in_windows && ownership::is_windows_owned(&target.join(format!("{name}.psd1")).to_string_lossy()) {
                         item.protection = Protection::Locked;
                         item.hidden = true;
+                    } else if in_windows {
+                        // Third-party module under a Windows folder: Guarded, still removable.
+                        item.protection = Protection::Guarded;
+                        item.hidden = true;
+                        item.uninstall.push(UninstallMethod::DeletePath { path });
                     } else if INBOX.contains(&name.to_ascii_lowercase().as_str()) && !user_scope {
                         item.protection = Protection::System;
                     } else {

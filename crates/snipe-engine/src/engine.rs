@@ -188,6 +188,44 @@ impl Engine {
                 let exe = item.executable.as_deref().ok_or("No executable is known for this item.")?;
                 json(uninstall::defender_scan(exe)?)
             }
+            Request::ScheduleRestartCleanup { id } => {
+                let item = self.item(&id)?;
+                if item.protection != snipe_core::Protection::Guarded {
+                    return Err("Remove at restart is only for self-protecting (Guarded) items.".into());
+                }
+                let all: Vec<Item> = self.inventory.values().cloned().collect();
+                let mut leftovers = traces::find(&item, &all);
+                // The self-protecting service itself: disable its autostart and delete it offline.
+                for method in &item.uninstall {
+                    if let snipe_core::UninstallMethod::Service { name } = method {
+                        let target = Target::ServiceDisable { name: name.clone() };
+                        if !leftovers.iter().any(|l| l.id == target.id()) {
+                            leftovers.push(leftover(target, 100, "self-protecting service, removed at restart"));
+                        }
+                    }
+                }
+                // The executable; the foreign-file exception covers a Windows folder.
+                if let Some(exe) = item.executable.as_deref() {
+                    let target = Target::File { path: exe.to_string() };
+                    if !leftovers.iter().any(|l| l.id == target.id()) {
+                        leftovers.push(leftover(target, 100, "self-protecting executable, removed at restart"));
+                    }
+                }
+                let txn = safety::create(&item, leftovers.clone()).map_err(|e| e.to_string())?;
+                let ids: Vec<String> = leftovers.iter().map(|l| l.id.clone()).collect();
+                let scheduled = crate::offline::schedule(&txn, &ids)?;
+                self.inventory.remove(&id);
+                json(RestartSchedule {
+                    txn,
+                    scheduled,
+                    message: if scheduled {
+                        "Scheduled. Windows will restart into Safe Mode, remove it and return automatically.".into()
+                    } else {
+                        "Could not schedule the restart cleanup.".into()
+                    },
+                })
+            }
+            Request::CancelRestartCleanup => json(crate::offline::cancel()?),
         }
     }
 }

@@ -17,7 +17,7 @@ export type ItemKind =
   | "cache";
 export type Scope = "machine" | "user";
 export type Arch = "x64" | "x86" | "arm64" | "neutral" | "unknown";
-export type Protection = "removable" | "shared" | "system" | "locked";
+export type Protection = "removable" | "shared" | "system" | "guarded" | "locked";
 export type SignatureStatus = "trusted" | "unsigned" | "untrusted" | "invalid" | "expired" | "unknown";
 
 export interface Signature {
@@ -118,6 +118,13 @@ export interface ProcInfo {
   path: string;
 }
 
+export interface TierInfo {
+  tier: "standard" | "authorized" | "force" | "atRestart" | "external";
+  label: string;
+  available: boolean;
+  detail: string;
+}
+
 export interface Plan {
   item: Item;
   blocked: string | null;
@@ -125,6 +132,7 @@ export interface Plan {
   methods: MethodInfo[];
   processes: ProcInfo[];
   canForce: boolean;
+  tiers: TierInfo[];
 }
 
 export interface ExecOutcome {
@@ -204,7 +212,31 @@ export const KIND_LABELS: Record<ItemKind, string> = {
   cache: "Cache",
 };
 
-export const PROTECTIONS: Protection[] = ["removable", "shared", "system", "locked"];
+export const PROTECTIONS: Protection[] = ["removable", "shared", "system", "guarded", "locked"];
+
+export const PROTECTION_LABELS: Record<Protection, string> = {
+  removable: "Removable",
+  shared: "Shared",
+  system: "System",
+  guarded: "Guarded",
+  locked: "Locked",
+};
+
+/** Plain-language reason shown in the details pane for Guarded and Locked items. */
+export function protectionReason(item: Item): string | null {
+  switch (item.protection) {
+    case "locked":
+      return "Owned by Windows and critical to it, so Snipe never removes it.";
+    case "guarded":
+      return "This software protects itself. You can still remove it with Force remove or Remove at restart.";
+    case "shared":
+      return "Other programs may depend on this shared component.";
+    case "system":
+      return "A Windows component, removed only through its supported mechanism.";
+    default:
+      return null;
+  }
+}
 
 export interface Category {
   id: string;
@@ -241,7 +273,17 @@ export function removalBlock(item: Item): string | null {
 }
 
 export function canForce(item: Item): boolean {
-  return ["win32", "msi", "appx"].includes(item.kind) && item.protection !== "locked" && item.protection !== "system";
+  // Guarded self-protecting items (services, drivers, protected processes) and the
+  // app kinds can all be force-removed; only Windows-owned Locked and supported-only
+  // System items are off limits.
+  if (item.protection === "locked" || item.protection === "system") return false;
+  if (item.protection === "guarded") return true;
+  return ["win32", "msi", "appx"].includes(item.kind);
+}
+
+/** True when the item needs a restart-time (Safe Mode) cleanup to be removed. */
+export function needsRestartRemoval(item: Item): boolean {
+  return item.protection === "guarded";
 }
 
 export function canRemoveThreat(item: Item): boolean {

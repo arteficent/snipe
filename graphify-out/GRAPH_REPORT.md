@@ -1,69 +1,73 @@
-# Graph Report - .  (2026-10-31)
+# Graph Report - .  (2026-11-03)
 
 ## Corpus Check
-- Corpus is ~36,895 words - fits in a single context window. You may not need a graph.
+- 33 files · ~51,094 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 974 nodes · 1900 edges · 49 communities
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 116 edges (avg confidence: 0.81)
+- 1071 nodes · 2091 edges · 54 communities
+- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 137 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Frontend API & Types|Frontend API & Types]]
-- [[_COMMUNITY_Caches & Signature Trust|Caches & Signature Trust]]
-- [[_COMMUNITY_Uninstall Execution|Uninstall Execution]]
-- [[_COMMUNITY_Safety Transactions|Safety Transactions]]
-- [[_COMMUNITY_Tauri Commands|Tauri Commands]]
-- [[_COMMUNITY_Svelte UI Components|Svelte UI Components]]
-- [[_COMMUNITY_Package Managers & Modules|Package Managers & Modules]]
-- [[_COMMUNITY_Leftover Scanner|Leftover Scanner]]
-- [[_COMMUNITY_Collector Registry & Tasks|Collector Registry & Tasks]]
-- [[_COMMUNITY_Core Item Model|Core Item Model]]
-- [[_COMMUNITY_Registry Programs Collector|Registry Programs Collector]]
-- [[_COMMUNITY_Elevated Broker IPC|Elevated Broker IPC]]
-- [[_COMMUNITY_Engine Request Handler|Engine Request Handler]]
-- [[_COMMUNITY_Tauri Configuration|Tauri Configuration]]
-- [[_COMMUNITY_Registry IO & Backup|Registry I/O & Backup]]
-- [[_COMMUNITY_DISM Features & Updates|DISM Features & Updates]]
-- [[_COMMUNITY_SDK & Runtime Detection|SDK & Runtime Detection]]
-- [[_COMMUNITY_Driver Packages|Driver Packages]]
-- [[_COMMUNITY_Engine Protocol|Engine Protocol]]
-- [[_COMMUNITY_Services Collector|Services Collector]]
-- [[_COMMUNITY_Startup Entries|Startup Entries]]
-- [[_COMMUNITY_Process Collector|Process Collector]]
-- [[_COMMUNITY_Versioning Script|Versioning Script]]
-- [[_COMMUNITY_Deny-list|Deny-list]]
-- [[_COMMUNITY_Risk Heuristics|Risk Heuristics]]
-- [[_COMMUNITY_Path Utilities|Path Utilities]]
-- [[_COMMUNITY_AppX Packages|AppX Packages]]
-- [[_COMMUNITY_Security Features (Docs)|Security Features (Docs)]]
-- [[_COMMUNITY_PR Change Detection|PR Change Detection]]
-- [[_COMMUNITY_TypeScript Config|TypeScript Config]]
-- [[_COMMUNITY_Date Helpers|Date Helpers]]
-- [[_COMMUNITY_Inventory Cache|Inventory Cache]]
-- [[_COMMUNITY_CSVJSON Export|CSV/JSON Export]]
-- [[_COMMUNITY_Secure Data Store|Secure Data Store]]
-- [[_COMMUNITY_Inventory Design (Docs)|Inventory Design (Docs)]]
-- [[_COMMUNITY_Frontend & PR CI (Docs)|Frontend & PR CI (Docs)]]
-- [[_COMMUNITY_CLI Entry Point|CLI Entry Point]]
-- [[_COMMUNITY_Safety Layer (Docs)|Safety Layer (Docs)]]
-- [[_COMMUNITY_Uninstall Pipeline (Docs)|Uninstall Pipeline (Docs)]]
-- [[_COMMUNITY_Architecture & Tech Choice|Architecture & Tech Choice]]
-- [[_COMMUNITY_Release & Versioning (Docs)|Release & Versioning (Docs)]]
-- [[_COMMUNITY_Tauri Capabilities|Tauri Capabilities]]
-- [[_COMMUNITY_Broker Security Model|Broker Security Model]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `blocking()` - 22 edges
-2. `find()` - 21 edges
-3. `admin_call()` - 20 edges
-4. `env_path()` - 19 edges
-5. `Result` - 18 edges
-6. `String` - 18 edges
-7. `remove()` - 18 edges
+1. `blocking()` - 24 edges
+2. `admin_call()` - 21 edges
+3. `find()` - 21 edges
+4. `Result` - 19 edges
+5. `String` - 19 edges
+6. `env_path()` - 19 edges
+7. `remove()` - 19 edges
 8. `Finder` - 18 edges
-9. `AppHandle` - 15 edges
-10. `Item` - 15 edges
+9. `invoke()` - 18 edges
+10. `AppHandle` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Deep Uninstall` --semantically_similar_to--> `Uninstall Pipeline`  [INFERRED] [semantically similar]
@@ -88,212 +92,220 @@
 - 1-file cycle: `crates/snipe-collectors/src/sdks.rs -> crates/snipe-collectors/src/sdks.rs`
 - 1-file cycle: `crates/snipe-collectors/src/startup.rs -> crates/snipe-collectors/src/startup.rs`
 - 1-file cycle: `crates/snipe-collectors/src/tasks.rs -> crates/snipe-collectors/src/tasks.rs`
+- 1-file cycle: `crates/snipe-engine/src/engine.rs -> crates/snipe-engine/src/engine.rs`
 - 1-file cycle: `crates/snipe-engine/src/broker.rs -> crates/snipe-engine/src/broker.rs`
 - 1-file cycle: `crates/snipe-engine/src/cache.rs -> crates/snipe-engine/src/cache.rs`
-- 1-file cycle: `crates/snipe-engine/src/engine.rs -> crates/snipe-engine/src/engine.rs`
 - 1-file cycle: `crates/snipe-engine/src/export.rs -> crates/snipe-engine/src/export.rs`
 - 1-file cycle: `crates/snipe-engine/src/regio.rs -> crates/snipe-engine/src/regio.rs`
 - 1-file cycle: `crates/snipe-engine/src/safety.rs -> crates/snipe-engine/src/safety.rs`
 - 1-file cycle: `crates/snipe-engine/src/store.rs -> crates/snipe-engine/src/store.rs`
 - 1-file cycle: `crates/snipe-engine/src/traces.rs -> crates/snipe-engine/src/traces.rs`
+- 1-file cycle: `crates/snipe-engine/src/offline.rs -> crates/snipe-engine/src/offline.rs`
 
-## Hyperedges (group relationships)
-- **Broker-driven uninstall flow: broker -> safety -> uninstall -> leftover scan -> backup/quarantine** — docs_architecture_and_plan_broker_named_pipe, docs_architecture_and_plan_safety_layer, docs_architecture_and_plan_uninstall_pipeline, docs_architecture_and_plan_leftover_scanner, docs_architecture_and_plan_file_quarantine, docs_architecture_and_plan_registry_backup [EXTRACTED 1.00]
-- **Versioning and release pipeline** — readme_version_mjs, readme_conventional_commits, readme_semantic_versioning, workflows_release_release_workflow, workflows_release_installer_build_matrix, readme_nsis_installer [EXTRACTED 1.00]
-- **Untrusted software detection and response** — readme_authenticode_verification, readme_risk_score, readme_remove_threat, readme_defender_scan, readme_quarantine_and_undo [EXTRACTED 1.00]
+## Communities (54 total, 0 thin omitted)
 
-## Communities (49 total, 0 thin omitted)
-
-### Community 0 - "Frontend API & Types"
-Cohesion: 0.05
-Nodes (32): Filters, matchesFilters(), matchesRisk(), Arch, CATEGORIES, Category, CleanReport, CollectorInfo (+24 more)
-
-### Community 1 - "Caches & Signature Trust"
-Cohesion: 0.07
-Nodes (45): Collector, CollectResult, Item, Option, PathBuf, Vec, Item, Option (+37 more)
-
-### Community 2 - "Uninstall Execution"
-Cohesion: 0.10
-Nodes (44): AsRef, Drop, Duration, OsStr, Result, String, Drop, ExecOptions (+36 more)
-
-### Community 3 - "Safety Transactions"
-Cohesion: 0.11
-Nodes (45): CleanReport, Item, Leftover, Option, Path, PathBuf, RegPath, Result (+37 more)
-
-### Community 4 - "Tauri Commands"
-Cohesion: 0.16
-Nodes (45): Engine, ExecOptions, FnMut, FnOnce, Option, PathBuf, Request, Result (+37 more)
-
-### Community 5 - "Svelte UI Components"
+### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (34): @tauri-apps/api/app, dependencies, @tauri-apps/api, devDependencies, svelte, svelte-check, @sveltejs/vite-plugin-svelte, @tauri-apps/cli (+26 more)
+Nodes (60): Collector, CollectResult, Item, Option, PathBuf, Vec, Collector, CollectResult (+52 more)
 
-### Community 6 - "Package Managers & Modules"
+### Community 1 - "Community 1"
+Cohesion: 0.09
+Nodes (48): AsRef, Drop, Duration, OsStr, Result, String, Drop, ExecOptions (+40 more)
+
+### Community 2 - "Community 2"
+Cohesion: 0.14
+Nodes (48): Engine, ExecOptions, FnMut, FnOnce, Option, PathBuf, Request, Result (+40 more)
+
+### Community 3 - "Community 3"
+Cohesion: 0.06
+Nodes (38): @tauri-apps/api/app, dependencies, @tauri-apps/api, devDependencies, svelte, svelte-check, @sveltejs/vite-plugin-svelte, @tauri-apps/cli (+30 more)
+
+### Community 4 - "Community 4"
 Cohesion: 0.11
-Nodes (35): Collector, CollectResult, Item, Option, PathBuf, String, Vec, Collector (+27 more)
+Nodes (46): CleanReport, Item, Leftover, Option, Path, PathBuf, RegPath, Result (+38 more)
 
-### Community 7 - "Leftover Scanner"
+### Community 5 - "Community 5"
 Cohesion: 0.13
 Nodes (23): HashMap, Item, Leftover, Option, Path, PathBuf, RegKey, RegPath (+15 more)
 
-### Community 8 - "Collector Registry & Tasks"
-Cohesion: 0.08
-Nodes (31): Box, BSTR, Collector, CollectResult, Duration, Item, ItemKind, Option (+23 more)
-
-### Community 9 - "Core Item Model"
+### Community 6 - "Community 6"
 Cohesion: 0.10
-Nodes (24): Option, Result, Self, Signature, String, Vec, Display, E (+16 more)
+Nodes (33): Item, Option, Signature, String, Send, Option, PathBuf, Result (+25 more)
 
-### Community 10 - "Registry Programs Collector"
+### Community 7 - "Community 7"
+Cohesion: 0.09
+Nodes (28): Display, Formatter, Into, Option, Result, Self, Signature, String (+20 more)
+
+### Community 8 - "Community 8"
 Cohesion: 0.10
 Nodes (23): Arch, Collector, CollectResult, Item, Option, RegKey, RegPath, Scope (+15 more)
 
-### Community 11 - "Elevated Broker IPC"
+### Community 9 - "Community 9"
+Cohesion: 0.15
+Nodes (28): AsRef, Command, AsRef, OsStr, Path, RegKey, RegPath, Result (+20 more)
+
+### Community 10 - "Community 10"
+Cohesion: 0.15
+Nodes (20): ExecOptions, ExecOutcome, FnMut, HashMap, Item, Option, Request, Result (+12 more)
+
+### Community 11 - "Community 11"
+Cohesion: 0.07
+Nodes (22): CATEGORIES, Category, CleanReport, CollectorInfo, ExecOutcome, KIND_LABELS, Leftover, LeftoverReport (+14 more)
+
+### Community 12 - "Community 12"
+Cohesion: 0.12
+Nodes (27): Box, Collector, CollectResult, Duration, Item, ItemKind, Option, Vec (+19 more)
+
+### Community 13 - "Community 13"
 Cohesion: 0.13
 Nodes (23): BufRead, BufReader, Drop, FnMut, Option, Request, Result, ScanEvent (+15 more)
 
-### Community 12 - "Engine Request Handler"
-Cohesion: 0.16
-Nodes (19): ExecOptions, ExecOutcome, FnMut, HashMap, Item, Option, Request, Result (+11 more)
-
-### Community 13 - "Tauri Configuration"
+### Community 14 - "Community 14"
 Cohesion: 0.07
 Nodes (28): app, security, windows, build, beforeBuildCommand, beforeDevCommand, devUrl, frontendDist (+20 more)
 
-### Community 14 - "Registry I/O & Backup"
-Cohesion: 0.16
-Nodes (26): Command, AsRef, OsStr, Path, RegKey, RegPath, Result, String (+18 more)
-
-### Community 15 - "DISM Features & Updates"
+### Community 15 - "Community 15"
 Cohesion: 0.13
 Nodes (15): Arch, Collector, CollectResult, Item, Option, String, Vec, arch_from() (+7 more)
 
-### Community 16 - "SDK & Runtime Detection"
+### Community 16 - "Community 16"
 Cohesion: 0.20
 Nodes (23): Collector, CollectResult, Item, ItemKind, Option, Path, PathBuf, Scope (+15 more)
 
-### Community 17 - "Driver Packages"
+### Community 17 - "Community 17"
+Cohesion: 0.15
+Nodes (23): Item, Option, String, Vec, CleanReport, CollectorInfo, ExecOptions, ExecOutcome (+15 more)
+
+### Community 18 - "Community 18"
+Cohesion: 0.10
+Nodes (15): Display, Drop, Formatter, Into, Option, Result, Self, String (+7 more)
+
+### Community 19 - "Community 19"
+Cohesion: 0.12
+Nodes (18): BSTR, Collector, CollectResult, Drop, FnOnce, Item, Result, String (+10 more)
+
+### Community 20 - "Community 20"
 Cohesion: 0.18
 Nodes (14): Collector, CollectResult, HashMap, Item, Option, Self, String, Vec (+6 more)
 
-### Community 18 - "Engine Protocol"
-Cohesion: 0.18
-Nodes (19): Item, Option, String, Vec, CleanReport, CollectorInfo, ExecOptions, ExecOutcome (+11 more)
+### Community 21 - "Community 21"
+Cohesion: 0.20
+Nodes (18): clean(), defenderScan(), execute(), exportInventory(), history(), leftovers(), loadCache(), openLocation() (+10 more)
 
-### Community 19 - "Services Collector"
+### Community 22 - "Community 22"
 Cohesion: 0.16
 Nodes (13): Collector, CollectResult, Drop, Item, Option, String, Vec, ENUM_SERVICE_STATUS_PROCESSW (+5 more)
 
-### Community 20 - "Startup Entries"
+### Community 23 - "Community 23"
 Cohesion: 0.18
 Nodes (13): Collector, CollectResult, Item, Option, RegKey, Scope, String, Vec (+5 more)
 
-### Community 21 - "Process Collector"
+### Community 24 - "Community 24"
 Cohesion: 0.15
 Nodes (12): Collector, CollectResult, Drop, Item, Option, String, Vec, PROCESSENTRY32W (+4 more)
 
-### Community 22 - "Versioning Script"
+### Community 25 - "Community 25"
 Cohesion: 0.21
 Nodes (15): bump(), [command, arg], commitsSince(), compare(), current(), detectBump(), file(), git() (+7 more)
 
-### Community 23 - "Deny-list"
+### Community 26 - "Community 26"
 Cohesion: 0.29
 Nodes (13): Option, String, Vec, denied_exact(), denied_trees(), env_dir(), is_denied_key(), is_denied_path() (+5 more)
 
-### Community 24 - "Risk Heuristics"
+### Community 27 - "Community 27"
+Cohesion: 0.21
+Nodes (12): Filters, matchesFilters(), matchesRisk(), Arch, Item, ItemKind, Protection, PROTECTIONS (+4 more)
+
+### Community 28 - "Community 28"
 Cohesion: 0.31
 Nodes (13): ItemKind, Option, String, Vec, assess(), flags_encoded_powershell_and_double_extensions(), flags_unsigned_masquerading_autostart(), is_autostart() (+5 more)
 
-### Community 25 - "Path Utilities"
+### Community 29 - "Community 29"
+Cohesion: 0.15
+Nodes (14): Snipe Architecture & Implementation Plan, Elevated Broker Named Pipe (DACL to user SID), Deny-list of Critical Paths and Keys, Implementation Phases 0-6, Item-ID-only Broker Requests, Process & Privilege Model (one binary, two modes), Rust + Tauri 2 Technology Choice, Security Requirements (+6 more)
+
+### Community 30 - "Community 30"
 Cohesion: 0.26
 Nodes (9): Option, String, exe_from_command(), expand(), is_under(), is_windows_path(), normalize(), parent_dir() (+1 more)
 
-### Community 26 - "AppX Packages"
+### Community 31 - "Community 31"
 Cohesion: 0.20
 Nodes (8): Collector, CollectResult, Item, Result, Vec, Package, AppxCollector, read_package()
 
-### Community 27 - "Security Features (Docs)"
+### Community 32 - "Community 32"
 Cohesion: 0.26
 Nodes (12): Leftover Confidence Scoring (0-100), Untrusted Software Heuristics (implementation status), Authenticode Verification (offline, embedded + catalogs), Deep Uninstall, Scan with Microsoft Defender, Risk Score (Untrusted & suspicious >= 40), Snipe (README), snipe-cli (headless CLI) (+4 more)
 
-### Community 28 - "PR Change Detection"
+### Community 33 - "Community 33"
 Cohesion: 0.17
 Nodes (10): affected, changed, everything, flags, GLOBAL, mergeBase, meta, names (+2 more)
 
-### Community 29 - "TypeScript Config"
+### Community 34 - "Community 34"
 Cohesion: 0.18
 Nodes (10): compilerOptions, module, moduleResolution, noEmit, skipLibCheck, strict, target, types (+2 more)
 
-### Community 30 - "Date Helpers"
+### Community 35 - "Community 35"
+Cohesion: 0.51
+Nodes (10): Result, String, bitlocker_protected(), delete_boot_entry(), reboot_now(), register_agent(), set_one_time_safeboot(), suspend_bitlocker_two_reboots() (+2 more)
+
+### Community 36 - "Community 36"
 Cohesion: 0.38
 Nodes (7): Option, String, civil_from_days(), format_ymd(), from_filetime_ticks(), from_unix_secs(), from_yyyymmdd()
 
-### Community 31 - "Inventory Cache"
+### Community 37 - "Community 37"
 Cohesion: 0.36
 Nodes (9): Item, Option, PathBuf, Result, Vec, Cached, load(), path() (+1 more)
 
-### Community 32 - "CSV/JSON Export"
+### Community 38 - "Community 38"
 Cohesion: 0.42
 Nodes (7): Item, String, T, csv_field(), enum_text(), to_csv(), to_json()
 
-### Community 33 - "Secure Data Store"
-Cohesion: 0.42
-Nodes (8): Option, PathBuf, Result, String, create_secure_dir(), data_root(), owner_sid(), txn_root()
-
-### Community 34 - "Inventory Design (Docs)"
+### Community 39 - "Community 39"
 Cohesion: 0.25
 Nodes (9): Avoid WMI Win32_Product (use MsiEnumProductsEx), Collector Trait, Incremental Refresh via Collector Fingerprints, Inventory Cache (SQLite planned, JSON snapshot implemented), Inventory Engine, Item Unified Data Model, Preflight (protection + dependency check), Protection Levels (Removable/Shared/SystemCritical/Locked) (+1 more)
 
-### Community 35 - "Frontend & PR CI (Docs)"
-Cohesion: 0.25
-Nodes (8): app/index.html, /src/main.ts entry module, Testing Strategy (unit, fixture, Windows Sandbox E2E, benchmarks), UninstallString Parsing (CommandLineToArgvW, no cmd /c), Svelte 5 Frontend (app/), .github/scripts/affected.mjs (change detection), CI Result Aggregate Job, Pull Request CI Workflow
-
-### Community 36 - "CLI Entry Point"
+### Community 40 - "Community 40"
 Cohesion: 0.36
 Nodes (7): Engine, Result, main(), String, ExitCode, run(), scan()
 
-### Community 37 - "Safety Layer (Docs)"
+### Community 41 - "Community 41"
 Cohesion: 0.29
 Nodes (8): Delete-on-Reboot for Locked Files, File Quarantine, Registry .reg Backup, Never Follow Reparse Points, Safety Layer, Transaction Journal and Undo, Quarantine, .reg Backups and Undo History, Remove Threat
 
-### Community 38 - "Uninstall Pipeline (Docs)"
+### Community 42 - "Community 42"
 Cohesion: 0.32
 Nodes (8): Forced Removal, Install Tracing via ETW, Job Object for Uninstallers, Leftover (Trace) Scanner, Restart Manager Process Shutdown, System Restore Point (SRSetRestorePoint), Silent Uninstall Switches (Inno /VERYSILENT, NSIS /S, MSI /qn), Uninstall Pipeline
 
-### Community 39 - "Architecture & Tech Choice"
-Cohesion: 0.29
-Nodes (7): Snipe Architecture & Implementation Plan, Implementation Phases 0-6, Process & Privilege Model (one binary, two modes), Rust + Tauri 2 Technology Choice, Slint Alternative UI, Least Privilege / On-demand Elevated Broker, Tauri 2 (WebView2)
-
-### Community 40 - "Release & Versioning (Docs)"
+### Community 43 - "Community 43"
 Cohesion: 0.33
 Nodes (7): Conventional Commits, NSIS Installer (x64/x86), Semantic Versioning, scripts/version.mjs, Installer Build Matrix (x86_64 / i686 MSVC), Release Workflow, SHA256SUMS Checksums
 
-### Community 41 - "Tauri Capabilities"
+### Community 44 - "Community 44"
+Cohesion: 0.33
+Nodes (6): app/index.html, /src/main.ts entry module, Svelte 5 Frontend (app/), .github/scripts/affected.mjs (change detection), CI Result Aggregate Job, Pull Request CI Workflow
+
+### Community 45 - "Community 45"
 Cohesion: 0.33
 Nodes (5): description, identifier, permissions, $schema, windows
 
-### Community 42 - "Broker Security Model"
-Cohesion: 0.40
-Nodes (5): Elevated Broker Named Pipe (DACL to user SID), Deny-list of Critical Paths and Keys, Item-ID-only Broker Requests, Security Requirements, Deny-list (Windows paths and registry keys)
-
 ## Knowledge Gaps
-- **234 isolated node(s):** `mergeBase`, `changed`, `GLOBAL`, `everything`, `meta` (+229 more)
+- **254 isolated node(s):** `mergeBase`, `changed`, `GLOBAL`, `everything`, `meta` (+249 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `system32()` connect `Safety Transactions` to `Caches & Signature Trust`, `Uninstall Execution`, `Leftover Scanner`, `Registry I/O & Backup`, `DISM Features & Updates`?**
-  _High betweenness centrality (0.112) - this node is a cross-community bridge._
-- **Why does `run_dism()` connect `DISM Features & Updates` to `Core Item Model`, `Safety Transactions`, `Registry I/O & Backup`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Why does `Command` connect `Registry I/O & Backup` to `Caches & Signature Trust`, `Tauri Commands`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
+- **Why does `system32()` connect `Community 1` to `Community 0`, `Community 35`, `Community 4`, `Community 5`, `Community 9`, `Community 15`?**
+  _High betweenness centrality (0.116) - this node is a cross-community bridge._
+- **Why does `Command` connect `Community 9` to `Community 0`, `Community 2`?**
+  _High betweenness centrality (0.059) - this node is a cross-community bridge._
+- **Why does `read_text()` connect `Community 0` to `Community 16`, `Community 20`, `Community 5`?**
+  _High betweenness centrality (0.057) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `find()` (e.g. with `dir_size()` and `loaded_user_sids()`) actually correct?**
   _`find()` has 4 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 16 inferred relationships involving `env_path()` (e.g. with `candidates()` and `.collect()`) actually correct?**
-  _`env_path()` has 16 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `mergeBase`, `changed`, `GLOBAL` to the rest of the system?**
-  _236 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Frontend API & Types` be split into smaller, more focused modules?**
-  _Cohesion score 0.05021173623714459 - nodes in this community are weakly interconnected._
+  _256 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
+  _Cohesion score 0.0625694187338023 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.09014675052410902 - nodes in this community are weakly interconnected._

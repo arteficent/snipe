@@ -13,13 +13,40 @@
 
   interface Props {
     item: Item;
-    mode: "uninstall" | "force" | "threat";
+    mode: "uninstall" | "force" | "threat" | "restart";
     onclose: (changed: boolean) => void;
   }
 
   let { item, mode, onclose }: Props = $props();
   const forced = $derived(mode === "force");
   const threat = $derived(mode === "threat");
+  const restart = $derived(mode === "restart");
+  let scheduling = $state(false);
+  let scheduled = $state(false);
+
+  // The removal ladder (§5.3). For a Guarded item the active tier is "Remove at restart".
+  const LADDER = [
+    { tier: "Standard", desc: "The vendor's own uninstaller." },
+    { tier: "Authorized", desc: "The vendor's uninstall password or token, when it has one." },
+    { tier: "Force now", desc: "Stop it, delete its files, queue locked files for the next boot." },
+    { tier: "Remove at restart", desc: "Reboot into Safe Mode automatically and delete it before it can start." },
+    { tier: "External", desc: "Hand off to Microsoft Defender Offline or a vendor cleanup tool." },
+  ];
+
+  async function scheduleRestart() {
+    scheduling = true;
+    error = null;
+    try {
+      await api.scheduleRestartCleanup(item.id);
+      changed = true;
+      scheduled = true;
+      step = "done";
+    } catch (e) {
+      error = String(e);
+      step = "done";
+    }
+    scheduling = false;
+  }
 
   type Step = "loading" | "plan" | "running" | "review" | "done";
   let step = $state<Step>("loading");
@@ -46,6 +73,10 @@
   );
 
   onMount(() => {
+    if (restart) {
+      step = "plan";
+      return;
+    }
     api
       .plan(item.id)
       .then((p) => {
@@ -141,7 +172,7 @@
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
     <header>
       <h2 id="dlg-title">
-        {threat ? "Remove threat" : forced ? "Force remove" : item.kind === "cache" ? "Clean" : "Uninstall"}
+        {restart ? "Remove at restart" : threat ? "Remove threat" : forced ? "Force remove" : item.kind === "cache" ? "Clean" : "Uninstall"}
         {item.name}
       </h2>
     </header>
@@ -149,6 +180,29 @@
     <div class="body">
       {#if step === "loading"}
         <p class="muted">Preparing…</p>
+      {:else if step === "plan" && restart}
+        <p>
+          <span class="mono">{item.name}</span> protects itself while Windows is running. Snipe will remove it the
+          one safe way that always works: it reboots into Safe Mode, where this software does not start, deletes it,
+          and reboots back to your desktop — all automatically.
+        </p>
+        <h3>Removal ladder</h3>
+        <ol class="ladder">
+          {#each LADDER as t}
+            <li class:active={t.tier === "Remove at restart"}>
+              <span class="tier">{t.tier}</span>
+              <span class="why">{t.desc}</span>
+            </li>
+          {/each}
+        </ol>
+        <p class="warning">
+          Your PC restarts twice on its own and is unavailable for a few minutes. BitLocker is suspended for the two
+          cleanup reboots; keep your recovery key handy just in case. Everything removed is backed up and can be
+          restored from History.
+        </p>
+        <p class="muted small">
+          After you confirm, the whole cycle runs with no further prompts. Administrator permission will be requested.
+        </p>
       {:else if step === "plan" && plan && threat}
         <p class="warning">Risk {item.risk}: {item.riskReasons.join("; ")}.</p>
         <p>
@@ -221,6 +275,10 @@
         </div>
       {:else if step === "done"}
         {#if error}<p class="error">{error}</p>{/if}
+        {#if scheduled && !error}
+          <p class="ok">Scheduled. Windows will restart into Safe Mode, remove {item.name}, and return to your desktop automatically.</p>
+          <p class="muted">A result summary appears after the machine is back. The removal can be undone from History.</p>
+        {/if}
         {#if outcome && !error}<p class="ok">{outcome.message}</p>{/if}
         {#if outcome?.stillPresent && outcome.success}
           <p class="warning">The item is still registered. It may finish after a restart, or the uninstaller was cancelled.</p>
@@ -246,7 +304,12 @@
     </div>
 
     <footer>
-      {#if step === "plan" && plan}
+      {#if step === "plan" && restart}
+        <button onclick={() => onclose(false)}>Cancel</button>
+        <button class="danger" disabled={scheduling} onclick={scheduleRestart}>
+          {scheduling ? "Scheduling…" : "Restart now and remove"}
+        </button>
+      {:else if step === "plan" && plan}
         <button onclick={() => onclose(false)}>Cancel</button>
         <button class="danger" disabled={!!plan.blocked && mode === "uninstall"} onclick={run}>
           {threat ? "Review removal" : forced ? "Scan for leftovers" : item.kind === "cache" ? "Clean" : "Uninstall"}
@@ -267,6 +330,37 @@
 </div>
 
 <style>
+  .ladder {
+    margin: 10px 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: tier;
+  }
+  .ladder li {
+    counter-increment: tier;
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 10px;
+    padding: 7px 10px;
+    border-left: 3px solid var(--border);
+    align-items: baseline;
+  }
+  .ladder li.active {
+    border-left-color: var(--danger);
+    background: var(--badge-guarded);
+    border-radius: 0 6px 6px 0;
+  }
+  .ladder .tier {
+    font-weight: 600;
+  }
+  .ladder li.active .tier::after {
+    content: " ← now";
+    font-weight: 400;
+    color: var(--fg-muted);
+  }
+  .ladder .why {
+    color: var(--fg-muted);
+  }
   .backdrop {
     position: fixed;
     inset: 0;

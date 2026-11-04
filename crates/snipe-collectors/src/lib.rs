@@ -5,6 +5,7 @@ mod caches;
 mod dism;
 mod drivers;
 mod modules;
+pub mod ownership;
 mod packages;
 mod processes;
 mod registry;
