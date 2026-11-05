@@ -69,7 +69,23 @@ pub fn plan(item: &Item) -> Plan {
         || item.protection == Protection::Guarded
             && matches!(item.kind, ItemKind::Service | ItemKind::Process | ItemKind::Driver | ItemKind::Win32 | ItemKind::Msi);
     let tiers = tiers(item, can_force);
-    Plan { item: item.clone(), blocked: item.removal_block().map(str::to_string), warnings, methods, processes, can_force, tiers }
+    let authorization = snipe_core::vendors::lookup(&item.name, item.publisher.as_deref()).map(|v| {
+        crate::protocol::AuthPrompt {
+            product: v.product.to_string(),
+            label: v.property.replace('_', " "),
+            instructions: v.instructions.to_string(),
+        }
+    });
+    Plan {
+        item: item.clone(),
+        blocked: item.removal_block().map(str::to_string),
+        warnings,
+        methods,
+        processes,
+        can_force,
+        tiers,
+        authorization,
+    }
 }
 
 /// The removal ladder (§5.3) for an item: which rungs apply and why.
@@ -235,11 +251,17 @@ fn silent_switch(exe: &str) -> Option<&'static str> {
     head.windows(8).any(|w| w == b"Nullsoft").then_some("/S")
 }
 
-fn run_msi(product_code: &str, silent: bool) -> Result<ExecOutcome, String> {
+fn run_msi(product_code: &str, silent: bool, property: Option<(&str, &snipe_core::vendors::Secret)>) -> Result<ExecOutcome, String> {
     if !snipe_core::cmdline::is_guid(product_code) {
         return Err("invalid product code".into());
     }
-    let args = format!("/x {product_code} /norestart {}", if silent { "/qn" } else { "/qb" });
+    let mut args = format!("/x {product_code} /norestart {}", if silent { "/qn" } else { "/qb" });
+    if let Some((name, secret)) = property {
+        // `name` is a fixed identifier from the verified vendor table and `secret` is already
+        // validated against a strict character set, so neither can inject extra arguments.
+        // The value is passed only on the msiexec command line (never logged or journaled).
+        args.push_str(&format!(" {}=\"{}\"", name.to_ascii_uppercase(), secret.expose()));
+    }
     let r = run_in_job(&system32("msiexec.exe").to_string_lossy(), &args, UNINSTALLER_TIMEOUT).map_err(|e| e.to_string())?;
     if r.timed_out {
         return Err("Windows Installer is still running after the timeout".into());
@@ -252,9 +274,9 @@ fn run_msi(product_code: &str, silent: bool) -> Result<ExecOutcome, String> {
     Ok(out)
 }
 
-fn run_command(command: &str, quiet: bool, silent: bool) -> Result<ExecOutcome, String> {
+fn run_command(command: &str, quiet: bool, silent: bool, property: Option<(&str, &snipe_core::vendors::Secret)>) -> Result<ExecOutcome, String> {
     if let Some(code) = msi_product_from_command(command) {
-        return run_msi(&code, silent || quiet);
+        return run_msi(&code, silent || quiet, property);
     }
     let split = split_command(command).ok_or("the uninstall command is empty")?;
     if !Path::new(&split.exe).is_file() {
@@ -410,6 +432,18 @@ pub fn execute(item: &Item, options: &ExecOptions) -> Result<ExecOutcome, String
         return Err(reason.to_string());
     }
     let method = item.uninstall.get(options.method).ok_or("unknown removal method")?;
+    // A vendor uninstall authorization (Tier 0a), validated and resolved to its MSI property.
+    let msi_property = match options.secret.as_ref().filter(|s| !s.is_empty()) {
+        Some(secret) => {
+            if !secret.is_well_formed() {
+                return Err("The authorization contains characters that are not allowed.".into());
+            }
+            snipe_core::vendors::lookup(&item.name, item.publisher.as_deref())
+                .filter(|v| v.kind == snipe_core::vendors::AuthKind::MsiProperty)
+                .map(|v| (v.property, secret))
+        }
+        None => None,
+    };
     if matches!(method, UninstallMethod::Command { .. } | UninstallMethod::Msi { .. } | UninstallMethod::PackageManager { .. })
         && let Some(dir) = item.install_location.as_deref().filter(|d| !deny::is_denied_path(d))
     {
@@ -418,8 +452,8 @@ pub fn execute(item: &Item, options: &ExecOptions) -> Result<ExecOutcome, String
         }
     }
     match method {
-        UninstallMethod::Command { command, quiet } => run_command(command, *quiet, options.silent),
-        UninstallMethod::Msi { product_code } => run_msi(product_code, options.silent),
+        UninstallMethod::Command { command, quiet } => run_command(command, *quiet, options.silent, msi_property),
+        UninstallMethod::Msi { product_code } => run_msi(product_code, options.silent, msi_property),
         UninstallMethod::Appx { package_full_name } => remove_appx(package_full_name),
         UninstallMethod::Driver { inf } => remove_driver(inf),
         UninstallMethod::Feature { name } => run_dism("/disable-feature", "featurename", name),

@@ -125,6 +125,12 @@ export interface TierInfo {
   detail: string;
 }
 
+export interface AuthPrompt {
+  product: string;
+  label: string;
+  instructions: string;
+}
+
 export interface Plan {
   item: Item;
   blocked: string | null;
@@ -133,6 +139,7 @@ export interface Plan {
   processes: ProcInfo[];
   canForce: boolean;
   tiers: TierInfo[];
+  authorization: AuthPrompt | null;
 }
 
 export interface ExecOutcome {

@@ -312,13 +312,16 @@ The only human step is the first click and its one confirmation. Steps from "reb
 - **Watchdog.** There is a hard time limit per run (default 10 minutes). On timeout the agent writes the partial results, unregisters and restarts to normal mode, so the machine never stalls in Safe Mode waiting for anyone.
 - **No network.** Safe Mode minimal has no networking, which also cuts off any command-and-control channel.
 - **Self-cleaning.** The agent's service key, its `SafeBoot\Minimal` entry, the BCD copy and the queue file are removed at the end of the run. The broker removes them too if scheduling is aborted before the reboot.
+- **Fail-safe, transactional setup.** Arming the cleanup is a sequence of privileged steps — register the agent, copy the boot entry, set `safeboot`/`bootsequence`, and (last) suspend BitLocker. Each is checked, and on the first failure Snipe rolls back every step already done (delete the boot entry, unregister the agent, resume BitLocker, delete the queue) so the machine is never left with a weakened boot or an unlocked disk. BitLocker is suspended **last**, only once everything else is armed, so a block earlier never leaves the volume key exposed.
+
+> **Honest limitation — anti-tamper blocks the setup (§5.4.4).** These very steps (Safe Mode persistence, boot reconfiguration, suspending BitLocker) are exactly what a commercial EDR's tamper protection is built to block — they are the MITRE "Safe Boot" (T1562.009) and "Inhibit System Recovery" (T1490) techniques. Against an agent like Cortex XDR with tamper protection on, `register_agent`/`bcdedit`/`manage-bde` are refused *while it runs*, so the automatic restart cleanup cannot be armed. Snipe does **not** try to defeat the running agent from the kernel (that is the EDR-killer path it refuses to build). It fails cleanly, rolls back, and points the owner at the paths that do work: the vendor uninstall authorization (§5.5), the vendor's management console, or booting from external media.
 
 #### 5.4.2 BitLocker handling (automatic)
 
 Booting a modified BCD entry can trigger BitLocker recovery, which would need a key at the console and break "no interaction". Snipe handles it automatically at schedule time so the cleanup boot never stops for a key:
 
 - **Not protected:** continue.
-- **Protected:** suspend protectors for exactly two restarts (into Safe Mode and back) with `manage-bde -protectors -disable C: -RebootCount 2`, which resumes protection automatically after the return boot. The one upfront confirmation (§5.4) states plainly that BitLocker will be suspended for the two cleanup reboots and that the recovery key should be on hand as a precaution. No key is entered during the process.
+- **Protected:** suspend protectors for exactly two restarts (into Safe Mode and back) with `manage-bde -protectors -disable C: -RebootCount 2`, which resumes protection automatically after the return boot. Suspension is the **last** setup step and is rolled back (`manage-bde -protectors -enable`) if the reboot itself is refused. The one upfront confirmation (§5.4) states plainly that BitLocker will be suspended for the two cleanup reboots and that the recovery key should be on hand as a precaution. No key is entered during the process.
 
 Exact BitLocker behavior with a `bootsequence` Safe Mode entry must be verified on TPM-only and TPM+PIN VMs before release (§12). If a configuration is found where recovery cannot be avoided, that configuration refuses Tier 2 up front rather than risk an interactive prompt mid-cycle.
 
@@ -326,9 +329,15 @@ Exact BitLocker behavior with a `bootsequence` Safe Mode entry must be verified 
 
 The agent records an item as "still protected" when it is registered under `SafeBoot` by itself and keeps running, or when a target is still locked by a loaded driver. In that case it finishes, returns to normal mode, and the result banner offers Tier 3. Snipe never retries in a loop.
 
+Note that some agents (Cortex XDR among them) register their boot-start driver under `SafeBoot\Minimal` so they keep protecting themselves in Safe Mode. For those, Safe Mode minimal is not low enough and Tier 2 will report "still protected"; the real answers are the vendor authorization (§5.5) or an offline environment (WinRE / Defender Offline / external media) where none of the installed OS's drivers load. A future revision should prefer a WinRE-based cleanup over Safe Mode for exactly this reason.
+
+#### 5.4.4 Why "try harder" is the wrong fix
+
+When the setup is blocked, the only ways to force it through are (a) a kernel driver that disables the running agent — the EDR-killer Snipe refuses to ship — or (b) an external boot. (a) would make Snipe indistinguishable from attacker tooling and unsignable by Microsoft; (b) is not something the app can fully automate from inside Windows. So for a tamper-protected, managed EDR the **supported** removal is its own authorization (Tier 0a), which is why Snipe leads with that for any Guarded item it recognizes as a known vendor.
+
 ### 5.5 Vendor tamper protection (Tier 0a)
 
-Security agents (for example Cortex XDR, CrowdStrike Falcon, SentinelOne, Sophos, Symantec) refuse their own uninstaller unless an authorization is supplied. A data table in `snipe-core` describes each product:
+Security agents (for example Cortex XDR, CrowdStrike Falcon, SentinelOne, Sophos, Symantec) refuse their own uninstaller unless an authorization is supplied. This is the removal path that actually works for a managed EDR, so Snipe surfaces it first: when `plan()` recognizes a Guarded item as a known vendor it returns an `authorization` prompt, and the Uninstall dialog shows a field for the password or token. The Remove-at-restart dialog for the same item warns that the automatic path may be blocked and recommends this one. A data table in `snipe-core` ([vendors.rs](../crates/snipe-core/src/vendors.rs)) describes each product:
 
 | Field | Purpose |
 |-------|---------|
@@ -340,9 +349,9 @@ Every entry must be verified against the vendor's current documentation before i
 
 Rules for the secret:
 
-- Entered in the UI and sent once to the broker inside `Execute`. It is never stored, cached or written to the journal, history or logs.
-- Wrapped in a `Secret` type whose `Debug` and `Display` output is redacted, and zeroized after use.
-- Validated against a strict character set and passed as a parsed argument, never through a shell.
+- Entered in the UI and sent once to the broker inside `Execute` as `ExecOptions.secret`. It is never stored, cached or written to the journal, history or logs. For an MSI product it is appended as the vendor's property on the `msiexec` command line only (the one unavoidable exposure of any MSI-property password).
+- Wrapped in a `Secret` type whose `Debug` and `Display` output is redacted, and zeroized on drop.
+- Validated against a strict character set before use and passed as a parsed argument, never through a shell.
 
 If the owner has no authorization, the ladder continues with Tier 1 and Tier 2. The owner can still remove the product; Snipe only avoids defeating the agent while it is running.
 
@@ -598,6 +607,7 @@ Each step can ship on its own and leaves the product working. Steps 1–3 only r
 | Deleting shared files breaks other apps | Dependency and `SharedDLLs` checks, publisher-only matches penalized, review step, quarantine and undo |
 | Removing system components bricks Windows | Hard deny-list, evidence-based Windows ownership (§5.2), `Locked` protection level, restore point, no TrustedInstaller ownership takeover, classification regression test on a clean VM |
 | Remove at restart looks like the ransomware "Safe Mode bypass" | Signed binary, interactive UI only to start (one confirm, never silent or from the CLI), clearly named one-time boot entry, event log entry, protected queue, frozen pre-reviewed plan, no kernel code |
+| Anti-tamper blocks the restart setup (as Cortex XDR does) | Expected, not a bug: the setup steps are the tamper indicators an EDR blocks. Scheduling is transactional and rolls back cleanly, then Snipe recommends the vendor authorization (Tier 0a), the management console, or external media — it never tries to disable the running agent from the kernel |
 | Machine stuck in Safe Mode during the unattended cycle | One-time `bootsequence` entry instead of a sticky `safeboot` flag; the agent deletes it first; watchdog auto-returns to normal mode; a crash or power loss still boots normally |
 | BitLocker recovery prompt interrupts the hands-off boot | Auto-suspend for exactly two restarts at schedule time; refuse Tier 2 on configurations where a prompt cannot be avoided; warn once up front to keep the recovery key handy |
 | Threat survives Safe Mode (registers under `SafeBoot`, signed boot driver) | Remove its `SafeBoot` registrations in the plan; report "still protected" instead of looping; hand off to Defender Offline |

@@ -27,6 +27,20 @@ pub struct ExecOptions {
     pub method: usize,
     /// Prefer silent switches when the uninstaller supports them.
     pub silent: bool,
+    /// Vendor uninstall authorization (password or token) for a tamper-protected
+    /// product. Never logged or journaled; see `snipe_core::vendors::Secret`.
+    #[serde(default)]
+    pub secret: Option<snipe_core::vendors::Secret>,
+}
+
+/// A request for a vendor's uninstall authorization (removal ladder Tier 0a).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthPrompt {
+    pub product: String,
+    /// Human-readable name of the field (e.g. "uninstall password").
+    pub label: String,
+    pub instructions: String,
 }
 
 /// Requests carry item IDs only; paths and commands are always re-derived by the engine.
@@ -93,6 +107,9 @@ pub struct Plan {
     pub can_force: bool,
     /// The removal ladder (§5.3): each tier and whether it applies to this item.
     pub tiers: Vec<TierInfo>,
+    /// Set when this item is a known tamper-protected product that needs an uninstall
+    /// password or token before its own uninstaller will run (Tier 0a).
+    pub authorization: Option<AuthPrompt>,
 }
 
 /// A rung on the removal ladder.

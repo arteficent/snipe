@@ -54,6 +54,7 @@
   let method = $state(0);
   let silent = $state(true);
   let restorePoint = $state(true);
+  let secret = $state("");
   let progress = $state("");
   let notes = $state<string[]>([]);
   let error = $state<string | null>(null);
@@ -74,6 +75,11 @@
 
   onMount(() => {
     if (restart) {
+      // Load the plan too, so a known-vendor item can recommend its authorization here.
+      api
+        .plan(item.id)
+        .then((p) => (plan = p))
+        .catch(() => {});
       step = "plan";
       return;
     }
@@ -113,7 +119,7 @@
       }
       if (!forced && !threat) {
         progress = "Running the uninstaller… (follow any prompts it shows)";
-        outcome = await api.execute(item.id, method, silent);
+        outcome = await api.execute(item.id, method, silent, secret);
         changed = true;
         if (!outcome.success) {
           error = outcome.message;
@@ -200,6 +206,13 @@
           cleanup reboots; keep your recovery key handy just in case. Everything removed is backed up and can be
           restored from History.
         </p>
+        {#if plan?.authorization}
+          <p class="warning">
+            <strong>{plan.authorization.product} protects its own boot settings.</strong> This automatic restart may be
+            blocked by its tamper protection. The reliable way to remove it is its {plan.authorization.label}:
+            close this and use <em>Uninstall…</em>. {plan.authorization.instructions}
+          </p>
+        {/if}
         <p class="muted small">
           After you confirm, the whole cycle runs with no further prompts. Administrator permission will be requested.
         </p>
@@ -236,6 +249,18 @@
             </label>
           {/each}
           <label class="opt"><input type="checkbox" bind:checked={silent} /> Prefer silent mode when supported</label>
+          {#if plan.authorization}
+            <h3>Vendor authorization</h3>
+            <p class="muted small">
+              {plan.authorization.product} will not uninstall without its {plan.authorization.label}.
+              {plan.authorization.instructions}
+            </p>
+            <label class="method">
+              <span>{plan.authorization.label}</span>
+              <input type="password" bind:value={secret} autocomplete="off" spellcheck="false" placeholder="required to remove it" />
+            </label>
+            <p class="muted small">The authorization is used only for this uninstall. It is never saved or logged.</p>
+          {/if}
         {/if}
         {#if !plan.blocked || forced}
           <label class="opt"><input type="checkbox" bind:checked={restorePoint} /> Create a System Restore point first</label>
