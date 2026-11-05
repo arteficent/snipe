@@ -207,6 +207,9 @@
     const labels = { command: (m) => `Uninstaller: ${m.command}`, msi: (m) => `Windows Installer: msiexec /x ${m.productCode}` };
     const vendor = /cortex|crowdstrike|sentinelone|sophos|palo alto/i.test(`${it.name} ${it.publisher ?? ""}`);
     const guarded = it.protection === "guarded";
+    const authorization = vendor && it.kind !== "service" && it.kind !== "process"
+      ? { product: it.name.replace(/ \(.*/, ""), label: "uninstall password", instructions: "Find it in the vendor's management console under the endpoint's uninstall settings." }
+      : null;
     const tiers = [
       { tier: "standard", label: "Standard", available: it.uninstall.length > 0 && it.protection !== "locked", detail: "Run the vendor's own uninstaller." },
       { tier: "authorized", label: "Authorized", available: vendor, detail: vendor ? "Supply the vendor's uninstall password or token." : "No vendor authorization is needed for this item." },
@@ -215,7 +218,7 @@
       { tier: "external", label: "External", available: !!it.executable, detail: "Hand off to Microsoft Defender Offline or a vendor cleanup tool." },
     ];
     return {
-      item: it, blocked, warnings, processes, tiers,
+      item: it, blocked, warnings, processes, tiers, authorization,
       methods: it.uninstall.map((m, index) => ({ index, label: (labels[m.type] ?? ((x) => `${x.type}`))(m), runsUnelevated: it.scope === "user", undoable: false })),
       canForce: ["win32", "msi", "appx"].includes(it.kind) || it.protection === "guarded",
     };

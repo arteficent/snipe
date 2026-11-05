@@ -34,6 +34,7 @@ pub fn schedule(txn: &str, ids: &[String]) -> Result<bool, String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let exe = exe.to_string_lossy().into_owned();
 
+    // 1. Freeze the reviewed plan (reversible: the queue file is deleted on rollback).
     let queue = Queue { txn: txn.to_string(), ids: ids.to_vec(), created: safety::now() };
     let path = queue_path().map_err(|e| e.to_string())?;
     std::fs::write(&path, serde_json::to_vec_pretty(&queue).map_err(|e| e.to_string())?)
@@ -42,19 +43,70 @@ pub fn schedule(txn: &str, ids: &[String]) -> Result<bool, String> {
     // A restore point before any boot change, best-effort.
     let _ = safety::restore_point(&format!("Snipe restart cleanup {txn}"));
 
-    if boot::bitlocker_protected() {
-        boot::suspend_bitlocker_two_reboots()?;
+    // 2. Register the Safe Mode agent. Self-protecting software (an EDR's anti-tamper)
+    //    blocks exactly these boot/persistence changes while it is running, so if any step
+    //    is refused we stop and undo everything — the machine is never left with a weakened
+    //    boot or a suspended disk.
+    if let Err(e) = boot::register_agent(&exe) {
+        cleanup_scheduling();
+        return Err(blocked_hint("register the cleanup service", &e));
     }
-    boot::register_agent(&exe).inspect_err(|_| cleanup_scheduling())?;
-    boot::set_one_time_safeboot().inspect_err(|_| cleanup_scheduling())?;
-    log_event(&format!("Scheduled restart cleanup for transaction {txn}"));
 
-    boot::reboot_now()?;
+    // 3. One-time Safe Mode boot entry (reversible: the copied entry is deleted on rollback).
+    let boot_id = match boot::set_one_time_safeboot() {
+        Ok(id) => id,
+        Err(e) => {
+            cleanup_scheduling();
+            return Err(blocked_hint("set the one-time Safe Mode boot entry", &e));
+        }
+    };
+
+    // 4. BitLocker is suspended LAST, only after everything else is armed, so a block at an
+    //    earlier step never leaves the volume key exposed. On failure, roll the boot entry back.
+    let suspended = if boot::bitlocker_protected() {
+        match boot::suspend_bitlocker_two_reboots() {
+            Ok(()) => true,
+            Err(e) => {
+                let _ = boot::delete_boot_entry(&boot_id);
+                cleanup_scheduling();
+                return Err(blocked_hint("suspend BitLocker for the cleanup reboots", &e));
+            }
+        }
+    } else {
+        false
+    };
+
+    // 5. Reboot. If even this is refused, undo the whole arrangement.
+    if let Err(e) = boot::reboot_now() {
+        if suspended {
+            let _ = boot::resume_bitlocker();
+        }
+        let _ = boot::delete_boot_entry(&boot_id);
+        cleanup_scheduling();
+        return Err(blocked_hint("restart the machine", &e));
+    }
+    log_event(&format!("Scheduled restart cleanup for transaction {txn}"));
     Ok(true)
 }
 
-/// Cancels a pending cleanup before the reboot (removes the boot entry, agent and queue).
+/// Explains a refused privileged step: this is almost always the target's own tamper
+/// protection, which cannot be defeated from the running system without turning Snipe
+/// into an EDR-killer. Points the owner at the paths that actually work.
+fn blocked_hint(action: &str, err: &str) -> String {
+    format!(
+        "Could not {action}: {err}\n\n\
+         This is almost certainly the item's own tamper protection blocking Snipe while it is \
+         running. The automatic restart cleanup cannot be set up against software that blocks \
+         boot changes, and Snipe will not disable a running security product from the kernel. \
+         Remove it instead with its vendor uninstall password or token (the Authorized step), \
+         from its management console, or by booting the PC from external media."
+    )
+}
+
+/// Cancels a pending cleanup before the reboot: removes the boot entry, the agent and the
+/// queue, and resumes BitLocker if it was suspended.
 pub fn cancel() -> Result<(), String> {
+    let _ = boot::resume_bitlocker();
     cleanup_scheduling();
     Ok(())
 }

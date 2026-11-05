@@ -23,8 +23,8 @@ export const session = () => invoke<Session>("session");
 export const startAdmin = () => invoke<Session>("start_admin");
 export const plan = (id: string) => invoke<Plan>("plan", { id });
 export const restorePoint = (description: string) => invoke<null>("restore_point", { description });
-export const execute = (id: string, method: number, silent: boolean) =>
-  invoke<ExecOutcome>("execute", { id, options: { method, silent } });
+export const execute = (id: string, method: number, silent: boolean, secret?: string) =>
+  invoke<ExecOutcome>("execute", { id, options: { method, silent, secret: secret || null } });
 export const leftovers = (id: string, forced: boolean) => invoke<LeftoverReport>("leftovers", { id, forced });
 export const clean = (txn: string, ids: string[]) => invoke<CleanReport>("clean", { txn, ids });
 export const history = () => invoke<TxnSummary[]>("history");

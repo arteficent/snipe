@@ -72,6 +72,15 @@ pub fn delete_boot_entry(id: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Re-enables BitLocker protectors, undoing a suspension if the schedule is rolled back.
+pub fn resume_bitlocker() -> Result<(), String> {
+    let (code, out) = tool("manage-bde.exe", &["-protectors", "-enable", "C:"])?;
+    if code != 0 {
+        return Err(format!("manage-bde enable failed ({code}): {}", exec::last_line(&out)));
+    }
+    Ok(())
+}
+
 /// Registers the offline agent as a LocalSystem service that auto-starts in Safe Mode
 /// minimal. `exe` is the path to the running Snipe binary.
 pub fn register_agent(exe: &str) -> Result<(), String> {

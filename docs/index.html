@@ -771,6 +771,7 @@
             <button class="tab" role="tab" aria-selected="false" data-shot="4">Remove threat</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="7">Guarded item</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="8">Remove at restart</button>
+            <button class="tab" role="tab" aria-selected="false" data-shot="9">Vendor password</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="5">History &amp; undo</button>
             <button class="tab" role="tab" aria-selected="false" data-shot="6">Dark mode</button>
           </div>
@@ -1052,6 +1053,7 @@ npm run tauri build -- --bundles nsis  <span class="c"># installer</span></code>
         ["images/dark.png", "Snipe follows your Windows light or dark theme.", false],
         ["images/guarded-details.png", "Guarded: self-protecting software stays removable, with Remove at restart in the details pane.", false],
         ["images/remove-at-restart.png", "Remove at restart: the removal ladder. Confirm once and Snipe reboots into Safe Mode, deletes it, and reboots back — automatically.", true],
+        ["images/vendor-authorization.png", "Vendor authorization: for a recognized EDR, Snipe asks for its uninstall password so the agent's own uninstaller runs cleanly.", true],
       ];
       const tabs = document.querySelectorAll(".tab");
       const img = document.getElementById("tour-img");
